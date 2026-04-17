@@ -1,0 +1,14 @@
+# Crear el paquete principal de la aplicación
+mkdir app
+
+# Crear subcarpetas para separar responsabilidades
+mkdir app/api            # Aquí van los endpoints (rutas)
+mkdir app/core           # Configuración, seguridad y constantes
+mkdir app/models         # Modelos de base de datos (SQLAlchemy/PostgreSQL)
+mkdir app/schemas        # Esquemas de validación de datos (Pydantic)
+mkdir app/services       # Lógica de negocio (asignación, pagos, etc.)
+mkdir app/ai_modules     # Lógica específica de IA (Audio, Visión)
+mkdir app/db             # Conexión y sesión de la base de datos
+
+# Crear los archivos __init__.py para que Python los reconozca como paquetes
+New-Item app/__init__.py, app/api/__init__.py, app/core/__init__.py, app/models/__init__.py, app/schemas/__init__.py, app/services/__init__.py, app/ai_modules/__init__.py, app/db/__init__.py -ItemType File

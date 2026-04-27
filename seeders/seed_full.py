@@ -196,28 +196,42 @@ CLIENTES = [
         "nombre": "Juan Conductor",
         "email": "conductor@ejemplo.com",
         "password": "cliente123!",
-        "telefono": "+591 75555001",
+        "telefono": "+591 70111001",
         "vehiculo": {"placa": "SCZ-001", "marca": "Toyota", "modelo": "Corolla", "anio": 2021, "color": "Blanco"},
     },
     {
         "nombre": "Ana Pérez",
         "email": "ana.cliente@ejemplo.com",
         "password": "cliente123!",
-        "telefono": "+591 75555002",
+        "telefono": "+591 70111002",
         "vehiculo": {"placa": "SCZ-002", "marca": "Nissan", "modelo": "Sentra", "anio": 2020, "color": "Rojo"},
     },
     {
         "nombre": "Pedro Ramírez",
         "email": "pedro.cliente@ejemplo.com",
         "password": "cliente123!",
-        "telefono": "+591 75555003",
+        "telefono": "+591 70111003",
         "vehiculo": {"placa": "SCZ-003", "marca": "Suzuki", "modelo": "Swift", "anio": 2022, "color": "Azul"},
+    },
+    {
+        "nombre": "María Flores",
+        "email": "maria.cliente@ejemplo.com",
+        "password": "cliente123!",
+        "telefono": "+591 70111004",
+        "vehiculo": {"placa": "SCZ-004", "marca": "Kia", "modelo": "Picanto", "anio": 2023, "color": "Negro"},
+    },
+    {
+        "nombre": "Carlos Quispe",
+        "email": "carlos.cliente@ejemplo.com",
+        "password": "cliente123!",
+        "telefono": "+591 70111005",
+        "vehiculo": {"placa": "SCZ-005", "marca": "Chevrolet", "modelo": "Spark", "anio": 2019, "color": "Gris"},
     },
 ]
 
-# Cinco escenarios de incidente cubriendo TODOS los estados
-# (cliente_idx, descripcion, lat, lng, categoria_nombre, prioridad_nombre,
-#  estado_incidente_final, estado_asignacion_final, taller_idx, tecnico_idx_global)
+# Cinco escenarios — 1 incidente por cliente, sin solapamiento de activos.
+# taller_idx=0 (Taller Excelente) recibe la evaluación para que las estrellas
+# aparezcan en el dashboard cuando el usuario loguea como gerente@tallerexcelente.com
 INCIDENTES = [
     {
         "cliente_idx": 0,
@@ -228,7 +242,7 @@ INCIDENTES = [
         "estado_inc": "pendiente",
         "estado_asig": "pendiente",
         "taller_idx": 0,
-        "tecnico_idx": None,  # Aún no asignado
+        "tecnico_idx": None,
     },
     {
         "cliente_idx": 1,
@@ -253,7 +267,7 @@ INCIDENTES = [
         "tecnico_idx": None,
     },
     {
-        "cliente_idx": 0,
+        "cliente_idx": 3,
         "descripcion": "Falla del motor en plena vía. Sale humo del cofre.",
         "lat": -17.795020, "lng": -63.190100,
         "categoria": "motor",
@@ -264,15 +278,15 @@ INCIDENTES = [
         "tecnico_idx": 2,  # Luis Rodríguez
     },
     {
-        "cliente_idx": 1,
+        "cliente_idx": 4,
         "descripcion": "Se me perdieron las llaves, no puedo entrar al auto.",
         "lat": -17.808120, "lng": -63.196250,
         "categoria": "llaves",
         "prioridad": "media",
         "estado_inc": "atendido",
         "estado_asig": "completada",
-        "taller_idx": 2,
-        "tecnico_idx": 5,  # Diego Mamani
+        "taller_idx": 0,   # Taller Excelente recibe la evaluación → estrellas visibles
+        "tecnico_idx": 0,  # Juan Pérez
     },
 ]
 

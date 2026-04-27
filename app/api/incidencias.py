@@ -158,6 +158,22 @@ def reportar_incidencia(
     Retorna: Incidente creado con id_incidente
     """
     
+    # ✅ VALIDACIÓN 0: Solo 1 incidente activo por usuario
+    incidente_activo = db.query(Incidente).join(
+        EstadoIncidente, Incidente.id_estado == EstadoIncidente.id_estado
+    ).filter(
+        Incidente.id_usuario == current_user.id_usuario,
+        EstadoIncidente.nombre.in_(["pendiente", "en_proceso"])
+    ).first()
+    if incidente_activo:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"Ya tienes un incidente activo (#{incidente_activo.id_incidente}). "
+                "Espera a que sea atendido o cancélalo antes de reportar otro."
+            ),
+        )
+
     # ✅ VALIDACIÓN 1: Verificar que el vehículo existe Y pertenece a este usuario
     vehiculo = db.query(Vehiculo).filter(
         Vehiculo.id_vehiculo == incidente_in.id_vehiculo,

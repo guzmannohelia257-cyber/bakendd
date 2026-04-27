@@ -5,6 +5,7 @@ Punto de entrada: uvicorn app.main:app --reload
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import get_settings
+import os
 from app.api import (
     users_router, talleres_router, vehiculos_router,
     incidencias_router, evidencias_router, tecnicos_router,
@@ -21,7 +22,8 @@ settings = get_settings()
 
 # Crear las tablas en la base de datos (si no existen)
 # En producción, usar Alembic para migraciones
-Base.metadata.create_all(bind=engine)
+if settings.AUTO_CREATE_TABLES:
+    Base.metadata.create_all(bind=engine)
 
 # Inicializar aplicación FastAPI
 app = FastAPI(
@@ -125,7 +127,7 @@ if __name__ == "__main__":
     uvicorn.run(
         "app.main:app",
         host="0.0.0.0",
-        port=8000,
+        port=int(os.getenv("PORT", "8000")),
         reload=settings.DEBUG,
         log_level="info"
     )

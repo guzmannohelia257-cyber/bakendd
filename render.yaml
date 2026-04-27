@@ -1,0 +1,37 @@
+services:
+  - type: web
+    name: emergencias-vehiculares-api
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn -k uvicorn.workers.UvicornWorker app.main:app
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: SECRET_KEY
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: AUTO_CREATE_TABLES
+        value: "false"
+      - key: DEBUG
+        value: "false"
+      - key: AWS_REGION
+        value: "us-east-1"
+      - key: BEDROCK_MODEL_ID
+        value: "us.amazon.nova-pro-v1:0"
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: "gemini-3-flash-preview"
+      - key: FIREBASE_CREDENTIALS_PATH
+        value: ""
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false

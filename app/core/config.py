@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     APP_NAME: str = "Emergencias Vehiculares API"
     DEBUG: bool = False
 
+    # Database
+    AUTO_CREATE_TABLES: bool = False
+
     # Cloudinary (almacenamiento de evidencias)
     CLOUDINARY_CLOUD_NAME: str
     CLOUDINARY_API_KEY: str

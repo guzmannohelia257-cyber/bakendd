@@ -97,8 +97,6 @@ TABLAS_A_LIMPIAR = [
     "tipo_evidencia",
     "metodo_pago",
     "estado_pago",
-    # Tabla legacy
-    "tecnico",
 ]
 
 
@@ -625,7 +623,7 @@ def _seed_incidentes(
             db.add(Pago(
                 id_incidente=incidente.id_incidente,
                 id_metodo_pago=metodo_pago_by["tarjeta"].id_metodo_pago,
-                id_estado_pago=estado_pago_by["completado"].id_estado_pago,
+                id_estado_pago=estado_pago_by["pendiente"].id_estado_pago,
                 monto_total=85.50,
                 comision_plataforma=8.55,
                 monto_taller=76.95,

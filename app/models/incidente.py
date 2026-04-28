@@ -167,3 +167,7 @@ class Evaluacion(Base):
     incidente = relationship("Incidente")
     usuario = relationship("Usuario")
     taller = relationship("Taller", back_populates="evaluaciones")
+
+    @property
+    def id_tecnico(self):
+        return None

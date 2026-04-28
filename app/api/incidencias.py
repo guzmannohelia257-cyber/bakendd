@@ -594,7 +594,6 @@ def evaluar_servicio(
         id_incidente=id_incidente,
         id_usuario=current_user.id_usuario,
         id_taller=asignacion_completada.id_taller,
-        id_tecnico=asignacion_completada.id_usuario,  # ID del usuario técnico
         estrellas=payload.estrellas,
         comentario=payload.comentario,
     )

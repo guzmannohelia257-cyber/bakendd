@@ -19,11 +19,11 @@ from sqlalchemy import extract, func
 from typing import List, Optional
 
 from app.db.session import get_db
-from app.models.taller import Taller
+from app.models.taller import Taller, TallerServicio
 from app.models.user_model import Usuario
 from app.models.incidente import Asignacion, Evaluacion
 from app.models.transaccional import Pago
-from app.models.catalogos import EstadoAsignacion, EstadoPago
+from app.models.catalogos import EstadoAsignacion, EstadoPago, CategoriaProblema
 from app.core.security import get_current_admin, hash_password
 from app.services.notificacion_service import crear_y_enviar_notificacion
 from app.schemas.admin_schema import (
@@ -34,6 +34,8 @@ from app.schemas.admin_schema import (
     GananciaMensualResponse,
     GananciaTallerRow,
     GananciaPorTallerResponse,
+    CategoriaAdminCreate,
+    CategoriaAdminResponse,
 )
 
 router = APIRouter(
@@ -86,6 +88,44 @@ def _subq_asig_completada(db: Session):
         .filter(EstadoAsignacion.nombre == "completada")
         .subquery("asig_comp")
     )
+
+
+# ── CATEGORÍAS ───────────────────────────────────────────────────────────────
+
+@router.get(
+    "/categorias",
+    response_model=List[CategoriaAdminResponse],
+    summary="Listar todas las categorías de problemas",
+)
+def listar_categorias(
+    db: Session = Depends(get_db),
+    _admin=Depends(get_current_admin),
+):
+    return db.query(CategoriaProblema).order_by(CategoriaProblema.id_categoria).all()
+
+
+@router.post(
+    "/categorias",
+    response_model=CategoriaAdminResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Crear una nueva categoría de problema",
+)
+def crear_categoria(
+    payload: CategoriaAdminCreate,
+    db: Session = Depends(get_db),
+    _admin=Depends(get_current_admin),
+):
+    nombre_norm = payload.nombre.strip().lower()
+    if db.query(CategoriaProblema).filter(CategoriaProblema.nombre == nombre_norm).first():
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Ya existe una categoría con el nombre '{payload.nombre}'",
+        )
+    nueva = CategoriaProblema(nombre=nombre_norm, descripcion=payload.descripcion)
+    db.add(nueva)
+    db.commit()
+    db.refresh(nueva)
+    return nueva
 
 
 # ── TALLERES ──────────────────────────────────────────────────────────────────
@@ -146,6 +186,16 @@ def crear_taller(
         disponible=True,
     )
     db.add(taller)
+    db.flush()  # obtener id_taller antes de insertar servicios
+
+    for id_cat in payload.categorias:
+        if db.get(CategoriaProblema, id_cat):
+            db.add(TallerServicio(
+                id_taller=taller.id_taller,
+                id_categoria=id_cat,
+                servicio_movil=True,
+            ))
+
     db.commit()
     db.refresh(taller)
     return taller

@@ -264,7 +264,19 @@ def listar_mis_incidencias(
         from datetime import datetime
         q = q.filter(Incidente.created_at <= datetime.combine(hasta, datetime.max.time()))
     
-    return q.order_by(Incidente.created_at.desc()).all()
+    incidencias = q.order_by(Incidente.created_at.desc()).all()
+    if incidencias:
+        ids = [inc.id_incidente for inc in incidencias]
+        evaluados = {
+            row[0]
+            for row in db.query(Evaluacion.id_incidente)
+            .filter(Evaluacion.id_incidente.in_(ids))
+            .all()
+        }
+        for inc in incidencias:
+            setattr(inc, "evaluado", inc.id_incidente in evaluados)
+
+    return incidencias
 
 
 @router.post(
@@ -399,6 +411,13 @@ def obtener_incidencia(
             detail="Incidencia no encontrada o no tienes permiso para verla"
         )
 
+    evaluado = (
+        db.query(Evaluacion.id_incidente)
+        .filter(Evaluacion.id_incidente == id_incidente)
+        .first()
+        is not None
+    )
+    setattr(incidente, "evaluado", evaluado)
     return incidente
 
 

@@ -20,10 +20,10 @@ from datetime import date
 from pydantic import BaseModel
 
 from app.db.session import get_db
-from app.models.taller import Taller
+from app.models.taller import Taller, TallerServicio
 from app.models.usuario import Usuario
 from app.models.incidente import Asignacion, CandidatoAsignacion, Incidente
-from app.models.catalogos import EstadoAsignacion, EstadoIncidente
+from app.models.catalogos import EstadoAsignacion, EstadoIncidente, CategoriaProblema
 from app.services.trazabilidad import (
     registrar_cambio_estado_asignacion,
     cambiar_estado_asignacion,
@@ -667,3 +667,106 @@ def historial_atenciones(
     items = q.order_by(Asignacion.created_at.desc()).offset((pagina - 1) * por_pagina).limit(por_pagina).all()
 
     return items
+
+
+# ============ GESTIÓN DE SERVICIOS DEL TALLER ============
+
+class CategoriaResponse(BaseModel):
+    id_categoria: int
+    nombre: str
+    descripcion: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class ServicioTallerResponse(BaseModel):
+    id_categoria: int
+    nombre: str
+    descripcion: Optional[str] = None
+    servicio_movil: bool
+
+    class Config:
+        from_attributes = True
+
+
+class ActualizarServiciosRequest(BaseModel):
+    categorias: List[int]
+
+
+@router.get(
+    "/categorias",
+    response_model=List[CategoriaResponse],
+    summary="Listar todas las categorías disponibles",
+    description="Retorna el catálogo completo de categorías para que el taller elija cuáles ofrece.",
+)
+def listar_categorias_disponibles(
+    db: Session = Depends(get_db),
+    _taller: Taller = Depends(get_current_taller),
+):
+    return db.query(CategoriaProblema).order_by(CategoriaProblema.id_categoria).all()
+
+
+@router.get(
+    "/mi-taller/servicios",
+    response_model=List[ServicioTallerResponse],
+    summary="Listar servicios actuales del taller",
+)
+def mis_servicios(
+    db: Session = Depends(get_db),
+    current_taller: Taller = Depends(get_current_taller),
+):
+    rows = (
+        db.query(TallerServicio, CategoriaProblema)
+        .join(CategoriaProblema, CategoriaProblema.id_categoria == TallerServicio.id_categoria)
+        .filter(TallerServicio.id_taller == current_taller.id_taller)
+        .order_by(CategoriaProblema.id_categoria)
+        .all()
+    )
+    return [
+        ServicioTallerResponse(
+            id_categoria=cat.id_categoria,
+            nombre=cat.nombre,
+            descripcion=cat.descripcion,
+            servicio_movil=srv.servicio_movil,
+        )
+        for srv, cat in rows
+    ]
+
+
+@router.put(
+    "/mi-taller/servicios",
+    response_model=List[ServicioTallerResponse],
+    summary="Actualizar servicios del taller",
+    description="Reemplaza la lista completa de servicios. Enviar lista vacía elimina todos.",
+)
+def actualizar_mis_servicios(
+    payload: ActualizarServiciosRequest,
+    db: Session = Depends(get_db),
+    current_taller: Taller = Depends(get_current_taller),
+):
+    # Borrar servicios actuales
+    db.query(TallerServicio).filter(
+        TallerServicio.id_taller == current_taller.id_taller
+    ).delete(synchronize_session=False)
+
+    # Insertar nuevos (solo IDs válidos)
+    nuevos = []
+    for id_cat in payload.categorias:
+        cat = db.get(CategoriaProblema, id_cat)
+        if cat:
+            srv = TallerServicio(
+                id_taller=current_taller.id_taller,
+                id_categoria=id_cat,
+                servicio_movil=True,
+            )
+            db.add(srv)
+            nuevos.append(ServicioTallerResponse(
+                id_categoria=cat.id_categoria,
+                nombre=cat.nombre,
+                descripcion=cat.descripcion,
+                servicio_movil=True,
+            ))
+
+    db.commit()
+    return nuevos

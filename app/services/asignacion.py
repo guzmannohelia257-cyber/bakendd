@@ -17,7 +17,7 @@ from sqlalchemy import func, and_
 
 from app.models.incidente import Incidente, CandidatoAsignacion, Asignacion, Evaluacion
 from app.models.taller import Taller, TallerServicio
-from app.models.usuario import Usuario
+from app.models.usuario_taller import UsuarioTaller
 from app.models.catalogos import EstadoAsignacion
 
 logger = logging.getLogger("asignacion_service")
@@ -227,11 +227,11 @@ def buscar_y_asignar(db: Session, incidente: Incidente) -> dict:
         capacidad_disponible = 1.0 - (asignaciones_activas / max(taller.capacidad_max, 1))
         capacidad_disponible = max(0, min(1, capacidad_disponible))  # Clamp [0, 1]
         
-        # Contar técnicos disponibles (usuarios con rol=3 activos)
-        # Nota: Sin tabla de asociación tecnico-taller, contamos todos los usuarios técnicos activos
-        tecnicos_disponibles = db.query(func.count(Usuario.id_usuario)).filter(
-            Usuario.id_rol == 3,
-            Usuario.activo == True
+        # Contar técnicos disponibles asociados a este taller específico
+        tecnicos_disponibles = db.query(func.count(UsuarioTaller.id_usuario)).filter(
+            UsuarioTaller.id_taller == taller.id_taller,
+            UsuarioTaller.activo == True,
+            UsuarioTaller.disponible == True,
         ).scalar()
         
         # Score normalizado (0..100)

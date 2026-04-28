@@ -151,6 +151,7 @@ class IncidenteDetalle(BaseModel):
     resumen_ia: Optional[str] = None
     clasificacion_ia_confianza: Optional[float] = None
     requiere_revision_manual: bool = False
+    evaluado: bool = False
 
     # Relaciones
     vehiculo: VehiculoMini

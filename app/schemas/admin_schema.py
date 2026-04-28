@@ -8,6 +8,24 @@ from datetime import datetime
 
 # ── TALLERES ──────────────────────────────────────────────────────────────────
 
+# ── CATEGORÍAS ────────────────────────────────────────────────────────────────
+
+class CategoriaAdminCreate(BaseModel):
+    nombre: str = Field(..., min_length=2, max_length=50)
+    descripcion: Optional[str] = Field(None, max_length=255)
+
+
+class CategoriaAdminResponse(BaseModel):
+    id_categoria: int
+    nombre: str
+    descripcion: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+# ── TALLERES ──────────────────────────────────────────────────────────────────
+
 class TallerAdminCreate(BaseModel):
     nombre: str = Field(..., min_length=2, max_length=100)
     email: str = Field(..., description="Email de acceso del taller")
@@ -18,6 +36,7 @@ class TallerAdminCreate(BaseModel):
     longitud: Optional[float] = None
     capacidad_max: int = Field(5, ge=1, le=100)
     verificado: bool = Field(True, description="Si el taller queda verificado al crearlo")
+    categorias: List[int] = Field(default_factory=list, description="IDs de categorías que atiende el taller")
 
 
 class TallerAdminResponse(BaseModel):

@@ -150,7 +150,7 @@ TALLERES = [
         "longitud": -63.200045,
         "capacidad_max": 5,
         # Categorías que atiende
-        "categorias": ["bateria", "llanta", "motor", "otros", "incierto"],
+        "categorias": ["bateria", "llanta", "motor", "choque", "llaves", "otros", "incierto"],
     },
     {
         "nombre": "Mecánica Central SC",
@@ -161,7 +161,7 @@ TALLERES = [
         "latitud": -17.781230,
         "longitud": -63.181450,
         "capacidad_max": 4,
-        "categorias": ["motor", "bateria", "choque", "incierto"],
+        "categorias": ["motor", "bateria", "choque", "llaves", "incierto"],
     },
     {
         "nombre": "Llantería El Cristo",
@@ -172,7 +172,7 @@ TALLERES = [
         "latitud": -17.815320,
         "longitud": -63.188120,
         "capacidad_max": 3,
-        "categorias": ["llanta", "llaves", "otros", "incierto"],
+        "categorias": ["llanta", "llaves", "choque", "otros", "incierto"],
     },
 ]
 

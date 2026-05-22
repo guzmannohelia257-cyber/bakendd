@@ -137,7 +137,7 @@ TALLERES = [
         "tenant_nombre": "Mecanica Central SC",
         "plan": "pro",
         "nombre": "Mecanica Central SC",
-        "email": "mecanica.central@talleres.test",
+        "email": "mecanica.central@talleres.app",
         "password": "taller123!",
         "telefono": "+591 70022222",
         "direccion": "2do Anillo y Av. Alemana, Santa Cruz",
@@ -154,7 +154,7 @@ TALLERES = [
         "tenant_nombre": "Llanteria El Cristo",
         "plan": "free",
         "nombre": "Llanteria El Cristo",
-        "email": "llanteria.cristo@talleres.test",
+        "email": "llanteria.cristo@talleres.app",
         "password": "taller123!",
         "telefono": "+591 70033333",
         "direccion": "Av. Cristo Redentor km 4",
@@ -188,24 +188,24 @@ TECNICOS = [
 
 CLIENTES = [
     # Incidentes basicos (7 estados de asignacion)
-    {"key": "cli_pendiente",      "nombre": "Lucia Pendiente",     "email": "cli.pendiente@yary.test",      "password": "cliente123!", "telefono": "+591 70111001", "vehiculo": {"placa": "SCZ-001", "marca": "Toyota",    "modelo": "Corolla",  "anio": 2021, "color": "Blanco"}},
-    {"key": "cli_aceptada",       "nombre": "Mario Aceptada",      "email": "cli.aceptada@yary.test",       "password": "cliente123!", "telefono": "+591 70111002", "vehiculo": {"placa": "SCZ-002", "marca": "Nissan",    "modelo": "Sentra",   "anio": 2020, "color": "Rojo"}},
-    {"key": "cli_rechazada",      "nombre": "Sofia Rechazada",     "email": "cli.rechazada@yary.test",      "password": "cliente123!", "telefono": "+591 70111003", "vehiculo": {"placa": "SCZ-003", "marca": "Suzuki",    "modelo": "Swift",    "anio": 2022, "color": "Azul"}},
-    {"key": "cli_en_camino",      "nombre": "Diego En Camino",     "email": "cli.encamino@yary.test",       "password": "cliente123!", "telefono": "+591 70111004", "vehiculo": {"placa": "SCZ-004", "marca": "Kia",       "modelo": "Picanto",  "anio": 2023, "color": "Negro"}},
-    {"key": "cli_llegado",        "nombre": "Carla Llegado",       "email": "cli.llegado@yary.test",        "password": "cliente123!", "telefono": "+591 70111005", "vehiculo": {"placa": "SCZ-005", "marca": "Chevrolet", "modelo": "Spark",    "anio": 2019, "color": "Gris"}},
-    {"key": "cli_atendido",       "nombre": "Ramiro Atendido",     "email": "cli.atendido@yary.test",       "password": "cliente123!", "telefono": "+591 70111006", "vehiculo": {"placa": "SCZ-006", "marca": "Honda",     "modelo": "Civic",    "anio": 2018, "color": "Plateado"}},
-    {"key": "cli_cancelado",      "nombre": "Veronica Cancelado",  "email": "cli.cancelado@yary.test",      "password": "cliente123!", "telefono": "+591 70111007", "vehiculo": {"placa": "SCZ-007", "marca": "Hyundai",   "modelo": "Accent",   "anio": 2017, "color": "Verde"}},
+    {"key": "cli_pendiente",      "nombre": "Lucia Pendiente",     "email": "cli.pendiente@yary.app",      "password": "cliente123!", "telefono": "+591 70111001", "vehiculo": {"placa": "SCZ-001", "marca": "Toyota",    "modelo": "Corolla",  "anio": 2021, "color": "Blanco"}},
+    {"key": "cli_aceptada",       "nombre": "Mario Aceptada",      "email": "cli.aceptada@yary.app",       "password": "cliente123!", "telefono": "+591 70111002", "vehiculo": {"placa": "SCZ-002", "marca": "Nissan",    "modelo": "Sentra",   "anio": 2020, "color": "Rojo"}},
+    {"key": "cli_rechazada",      "nombre": "Sofia Rechazada",     "email": "cli.rechazada@yary.app",      "password": "cliente123!", "telefono": "+591 70111003", "vehiculo": {"placa": "SCZ-003", "marca": "Suzuki",    "modelo": "Swift",    "anio": 2022, "color": "Azul"}},
+    {"key": "cli_en_camino",      "nombre": "Diego En Camino",     "email": "cli.encamino@yary.app",       "password": "cliente123!", "telefono": "+591 70111004", "vehiculo": {"placa": "SCZ-004", "marca": "Kia",       "modelo": "Picanto",  "anio": 2023, "color": "Negro"}},
+    {"key": "cli_llegado",        "nombre": "Carla Llegado",       "email": "cli.llegado@yary.app",        "password": "cliente123!", "telefono": "+591 70111005", "vehiculo": {"placa": "SCZ-005", "marca": "Chevrolet", "modelo": "Spark",    "anio": 2019, "color": "Gris"}},
+    {"key": "cli_atendido",       "nombre": "Ramiro Atendido",     "email": "cli.atendido@yary.app",       "password": "cliente123!", "telefono": "+591 70111006", "vehiculo": {"placa": "SCZ-006", "marca": "Honda",     "modelo": "Civic",    "anio": 2018, "color": "Plateado"}},
+    {"key": "cli_cancelado",      "nombre": "Veronica Cancelado",  "email": "cli.cancelado@yary.app",      "password": "cliente123!", "telefono": "+591 70111007", "vehiculo": {"placa": "SCZ-007", "marca": "Hyundai",   "modelo": "Accent",   "anio": 2017, "color": "Verde"}},
     # Cotizaciones (5 estados)
-    {"key": "cli_cot_pendiente",  "nombre": "Andres CotPendiente", "email": "cli.cotpendiente@yary.test",   "password": "cliente123!", "telefono": "+591 70111008", "vehiculo": {"placa": "SCZ-008", "marca": "Mazda",     "modelo": "3",        "anio": 2020, "color": "Azul"}},
-    {"key": "cli_cot_enviada",    "nombre": "Paola CotEnviada",    "email": "cli.cotenviada@yary.test",     "password": "cliente123!", "telefono": "+591 70111009", "vehiculo": {"placa": "SCZ-009", "marca": "Volkswagen","modelo": "Gol",      "anio": 2019, "color": "Blanco"}},
-    {"key": "cli_cot_aceptada",   "nombre": "Jorge CotAceptada",   "email": "cli.cotaceptada@yary.test",    "password": "cliente123!", "telefono": "+591 70111010", "vehiculo": {"placa": "SCZ-010", "marca": "Ford",      "modelo": "Fiesta",   "anio": 2021, "color": "Rojo"}},
-    {"key": "cli_cot_rechazada",  "nombre": "Elena CotRechazada",  "email": "cli.cotrechazada@yary.test",   "password": "cliente123!", "telefono": "+591 70111011", "vehiculo": {"placa": "SCZ-011", "marca": "Renault",   "modelo": "Logan",    "anio": 2022, "color": "Gris"}},
-    {"key": "cli_cot_expirada",   "nombre": "Pablo CotExpirada",   "email": "cli.cotexpirada@yary.test",    "password": "cliente123!", "telefono": "+591 70111012", "vehiculo": {"placa": "SCZ-012", "marca": "Peugeot",   "modelo": "208",      "anio": 2018, "color": "Negro"}},
+    {"key": "cli_cot_pendiente",  "nombre": "Andres CotPendiente", "email": "cli.cotpendiente@yary.app",   "password": "cliente123!", "telefono": "+591 70111008", "vehiculo": {"placa": "SCZ-008", "marca": "Mazda",     "modelo": "3",        "anio": 2020, "color": "Azul"}},
+    {"key": "cli_cot_enviada",    "nombre": "Paola CotEnviada",    "email": "cli.cotenviada@yary.app",     "password": "cliente123!", "telefono": "+591 70111009", "vehiculo": {"placa": "SCZ-009", "marca": "Volkswagen","modelo": "Gol",      "anio": 2019, "color": "Blanco"}},
+    {"key": "cli_cot_aceptada",   "nombre": "Jorge CotAceptada",   "email": "cli.cotaceptada@yary.app",    "password": "cliente123!", "telefono": "+591 70111010", "vehiculo": {"placa": "SCZ-010", "marca": "Ford",      "modelo": "Fiesta",   "anio": 2021, "color": "Rojo"}},
+    {"key": "cli_cot_rechazada",  "nombre": "Elena CotRechazada",  "email": "cli.cotrechazada@yary.app",   "password": "cliente123!", "telefono": "+591 70111011", "vehiculo": {"placa": "SCZ-011", "marca": "Renault",   "modelo": "Logan",    "anio": 2022, "color": "Gris"}},
+    {"key": "cli_cot_expirada",   "nombre": "Pablo CotExpirada",   "email": "cli.cotexpirada@yary.app",    "password": "cliente123!", "telefono": "+591 70111012", "vehiculo": {"placa": "SCZ-012", "marca": "Peugeot",   "modelo": "208",      "anio": 2018, "color": "Negro"}},
     # Pagos (estados adicionales)
-    {"key": "cli_pago_procesando","nombre": "Marta PagoProcesando","email": "cli.pagoprocesando@yary.test", "password": "cliente123!", "telefono": "+591 70111013", "vehiculo": {"placa": "SCZ-013", "marca": "Fiat",      "modelo": "Mobi",     "anio": 2020, "color": "Blanco"}},
-    {"key": "cli_pago_fallido",   "nombre": "Cesar PagoFallido",   "email": "cli.pagofallido@yary.test",    "password": "cliente123!", "telefono": "+591 70111014", "vehiculo": {"placa": "SCZ-014", "marca": "Subaru",    "modelo": "Impreza",  "anio": 2019, "color": "Azul"}},
-    {"key": "cli_pago_reembolso", "nombre": "Ines PagoReembolso",  "email": "cli.pagoreembolso@yary.test",  "password": "cliente123!", "telefono": "+591 70111015", "vehiculo": {"placa": "SCZ-015", "marca": "Mitsubishi","modelo": "Lancer",   "anio": 2017, "color": "Rojo"}},
-    {"key": "cli_pago_pendiente", "nombre": "Hugo PagoPendiente",  "email": "cli.pagopendiente@yary.test",  "password": "cliente123!", "telefono": "+591 70111016", "vehiculo": {"placa": "SCZ-016", "marca": "Toyota",    "modelo": "Yaris",    "anio": 2022, "color": "Blanco"}},
+    {"key": "cli_pago_procesando","nombre": "Marta PagoProcesando","email": "cli.pagoprocesando@yary.app", "password": "cliente123!", "telefono": "+591 70111013", "vehiculo": {"placa": "SCZ-013", "marca": "Fiat",      "modelo": "Mobi",     "anio": 2020, "color": "Blanco"}},
+    {"key": "cli_pago_fallido",   "nombre": "Cesar PagoFallido",   "email": "cli.pagofallido@yary.app",    "password": "cliente123!", "telefono": "+591 70111014", "vehiculo": {"placa": "SCZ-014", "marca": "Subaru",    "modelo": "Impreza",  "anio": 2019, "color": "Azul"}},
+    {"key": "cli_pago_reembolso", "nombre": "Ines PagoReembolso",  "email": "cli.pagoreembolso@yary.app",  "password": "cliente123!", "telefono": "+591 70111015", "vehiculo": {"placa": "SCZ-015", "marca": "Mitsubishi","modelo": "Lancer",   "anio": 2017, "color": "Rojo"}},
+    {"key": "cli_pago_pendiente", "nombre": "Hugo PagoPendiente",  "email": "cli.pagopendiente@yary.app",  "password": "cliente123!", "telefono": "+591 70111016", "vehiculo": {"placa": "SCZ-016", "marca": "Toyota",    "modelo": "Yaris",    "anio": 2022, "color": "Blanco"}},
 ]
 
 

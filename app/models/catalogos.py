@@ -2,7 +2,7 @@
 Catálogos (tablas de diccionario) del sistema.
 Valores fijos referenciados por las entidades principales.
 """
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, Boolean
 from sqlalchemy.orm import relationship
 from app.db.session import Base
 
@@ -31,6 +31,8 @@ class CategoriaProblema(Base):
     nombre = Column(String(50), nullable=False)
     descripcion = Column(String(200), nullable=True)
     icono_url = Column(String(255), nullable=True)
+    codigo = Column(String(50), nullable=True, unique=True)
+    requiere_cotizacion = Column(Boolean, default=False, nullable=False)
 
 
 class Prioridad(Base):

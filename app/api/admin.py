@@ -279,7 +279,6 @@ def toggle_verificar_taller(
     db.refresh(taller)
     return taller
 
-
 @router.delete(
     "/talleres/{id_taller}",
     summary="Dar de baja un taller (baja lógica)",

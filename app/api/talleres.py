@@ -16,6 +16,7 @@ Los técnicos son usuarios con rol=3, se crean a través de /usuarios/registro.
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from typing import List, Optional
+from math import radians, sin, cos, asin, sqrt
 from datetime import date
 from pydantic import BaseModel
 
@@ -44,7 +45,11 @@ from app.schemas.taller_schema import (
     UsuarioTallerUpdate,
     UsuarioTallerResponse,
     UsuarioTallerListResponse,
+    ActualizarServiciosTallerRequest,
+    TallerServicioResponse,
+    TallerCompatibleResponse,
 )
+from app.schemas.cancelacion_schema import TarifaTrasladoUpdate
 from app.schemas.incidente_schema import EvaluacionResponse
 from app.models.incidente import Evaluacion
 from app.core.security import (
@@ -87,7 +92,18 @@ def login_taller(credenciales: TallerLoginRequest, db: Session = Depends(get_db)
             detail="El taller ha sido desactivado",
         )
 
-    access_token = create_access_token(subject_id=taller.id_taller, tipo="taller")
+    # Multi-tenant (Fase 1): incluir id_tenant en el JWT para que el middleware
+    # pueda setear el contexto. Es None mientras el taller no haya sido vinculado
+    # a un tenant -> el filtro global lo trata como request publico.
+    extra: dict = {}
+    if taller.id_tenant is not None:
+        extra["id_tenant"] = taller.id_tenant
+
+    access_token = create_access_token(
+        subject_id=taller.id_taller,
+        tipo="taller",
+        extra_claims=extra or None,
+    )
     return {"access_token": access_token, "token_type": "bearer", "taller": taller}
 
 
@@ -127,6 +143,131 @@ def actualizar_disponibilidad(
     db.commit()
     db.refresh(current_taller)
     return current_taller
+
+
+@router.patch(
+    "/mi-taller/tarifa-traslado",
+    response_model=TallerResponse,
+    summary="Actualizar mi tarifa de traslado (compensacion por cancelaciones)",
+)
+def actualizar_tarifa_traslado(
+    body: TarifaTrasladoUpdate,
+    db: Session = Depends(get_db),
+    current_taller: Taller = Depends(get_current_taller),
+):
+    current_taller.tarifa_traslado = body.tarifa_traslado
+    db.commit()
+    db.refresh(current_taller)
+    return current_taller
+
+
+def _haversine_km(lat1, lng1, lat2, lng2) -> float:
+    r = 6371.0
+    dlat = radians(lat2 - lat1)
+    dlng = radians(lng2 - lng1)
+    a = sin(dlat / 2) ** 2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlng / 2) ** 2
+    return 2 * r * asin(sqrt(a))
+
+
+@router.get(
+    "/mi-taller/servicios",
+    response_model=List[TallerServicioResponse],
+    summary="Listar mis servicios declarados",
+)
+def listar_mis_servicios(
+    db: Session = Depends(get_db),
+    current_taller: Taller = Depends(get_current_taller),
+):
+    return (
+        db.query(TallerServicio)
+        .filter(TallerServicio.id_taller == current_taller.id_taller)
+        .all()
+    )
+
+
+@router.put(
+    "/mi-taller/servicios",
+    response_model=List[TallerServicioResponse],
+    summary="Reemplaza la lista completa de servicios de mi taller",
+)
+def actualizar_servicios(
+    body: ActualizarServiciosTallerRequest,
+    db: Session = Depends(get_db),
+    current_taller: Taller = Depends(get_current_taller),
+):
+    categorias_pedidas = {s.id_categoria for s in body.servicios}
+    if categorias_pedidas:
+        existentes = {
+            c.id_categoria
+            for c in db.query(CategoriaProblema)
+            .filter(CategoriaProblema.id_categoria.in_(categorias_pedidas))
+            .all()
+        }
+        faltantes = categorias_pedidas - existentes
+        if faltantes:
+            raise HTTPException(400, f"Categorias inexistentes: {sorted(faltantes)}")
+
+    db.query(TallerServicio).filter(
+        TallerServicio.id_taller == current_taller.id_taller
+    ).delete()
+
+    nuevos = [
+        TallerServicio(
+            id_taller=current_taller.id_taller,
+            id_categoria=s.id_categoria,
+            servicio_movil=s.servicio_movil,
+            tarifa_base=s.tarifa_base,
+        )
+        for s in body.servicios
+    ]
+    db.add_all(nuevos)
+    db.commit()
+    for n in nuevos:
+        db.refresh(n)
+    return nuevos
+
+
+@router.get(
+    "/compatibles",
+    response_model=List[TallerCompatibleResponse],
+    summary="Talleres que atienden una categoria, ordenados por cercania",
+)
+def talleres_compatibles(
+    id_categoria: int,
+    latitud: float,
+    longitud: float,
+    radio_km: float = 20.0,
+    db: Session = Depends(get_db),
+):
+    """
+    Publico (cliente reportando). NO requiere tenant. Devuelve top-10
+    talleres que tienen el servicio, ordenados por distancia.
+    """
+    candidatos = (
+        db.query(Taller, TallerServicio)
+        .join(TallerServicio, TallerServicio.id_taller == Taller.id_taller)
+        .filter(
+            TallerServicio.id_categoria == id_categoria,
+            Taller.activo == True,  # noqa: E712
+            Taller.disponible == True,  # noqa: E712
+            Taller.latitud.isnot(None),
+            Taller.longitud.isnot(None),
+        )
+        .all()
+    )
+
+    resultado = []
+    for taller, servicio in candidatos:
+        d = _haversine_km(latitud, longitud, taller.latitud, taller.longitud)
+        if d > radio_km:
+            continue
+        item = TallerCompatibleResponse.model_validate(taller)
+        item.distancia_km = round(d, 2)
+        item.tarifa_base = float(servicio.tarifa_base) if servicio.tarifa_base else None
+        resultado.append(item)
+
+    resultado.sort(key=lambda x: x.distancia_km or 9999)
+    return resultado[:10]
 
 
 # ============ TÉCNICOS (Gestión de Técnicos del Taller) ============

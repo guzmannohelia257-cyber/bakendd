@@ -18,6 +18,7 @@ class Notificacion(Base):
     )
 
     id_notificacion = Column(Integer, primary_key=True, index=True)
+    id_tenant = Column(Integer, ForeignKey("tenant.id_tenant"), nullable=True, index=True)
     id_usuario = Column(Integer, ForeignKey("usuario.id_usuario"), nullable=True, index=True)
     id_taller = Column(Integer, ForeignKey("taller.id_taller"), nullable=True, index=True)
     id_incidente = Column(Integer, ForeignKey("incidente.id_incidente"), nullable=True)
@@ -38,6 +39,7 @@ class Pago(Base):
     __tablename__ = "pago"
 
     id_pago = Column(Integer, primary_key=True, index=True)
+    id_tenant = Column(Integer, ForeignKey("tenant.id_tenant"), nullable=True, index=True)
     id_incidente = Column(Integer, ForeignKey("incidente.id_incidente"), nullable=False)
     id_metodo_pago = Column(Integer, ForeignKey("metodo_pago.id_metodo_pago"), nullable=False)
     id_estado_pago = Column(Integer, ForeignKey("estado_pago.id_estado_pago"), nullable=False)
@@ -59,6 +61,7 @@ class Metrica(Base):
     __tablename__ = "metrica"
 
     id_metrica = Column(Integer, primary_key=True, index=True)
+    id_tenant = Column(Integer, ForeignKey("tenant.id_tenant"), nullable=True, index=True)
     id_incidente = Column(Integer, ForeignKey("incidente.id_incidente"), nullable=False, unique=True)
 
     fecha_inicio = Column(DateTime(timezone=True), nullable=True)
@@ -87,6 +90,7 @@ class Mensaje(Base):
     )
 
     id_mensaje = Column(Integer, primary_key=True, index=True)
+    id_tenant = Column(Integer, ForeignKey("tenant.id_tenant"), nullable=True, index=True)
     id_incidente = Column(Integer, ForeignKey("incidente.id_incidente"), nullable=False, index=True)
     id_usuario = Column(Integer, ForeignKey("usuario.id_usuario"), nullable=True)
     id_taller = Column(Integer, ForeignKey("taller.id_taller"), nullable=True)

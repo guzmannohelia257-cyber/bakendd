@@ -11,8 +11,8 @@
 set -e
 
 if [ "${SEED_ON_STARTUP:-true}" = "true" ]; then
-    echo "==> [start.sh] SEED_ON_STARTUP=true → corriendo seeders/seed_full.py"
-    python -m seeders.seed_full
+    echo "==> [start.sh] SEED_ON_STARTUP=true → corriendo SETT/run_all.py"
+    python -m SETT.run_all
 else
     echo "==> [start.sh] SEED_ON_STARTUP=$SEED_ON_STARTUP → no se siembra la base"
 fi

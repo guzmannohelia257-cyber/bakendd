@@ -11,21 +11,35 @@ class Settings(BaseSettings):
     Settings que se leen desde el archivo .env
     Pydantic se encarga de las validaciones de tipos
     """
-    
+
     # Database
     DATABASE_URL: str
-    
+
     # Security
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    
+
     # App
     APP_NAME: str = "Emergencias Vehiculares API"
     DEBUG: bool = False
 
     # Database
+    # NOTA: a partir de Fase 0 el schema se gestiona con Alembic.
+    # Dejar en False en cualquier entorno que no sea un sandbox aislado.
     AUTO_CREATE_TABLES: bool = False
+
+    # CORS: lista separada por coma de origenes permitidos.
+    # Vacio + DEBUG=True -> se permite "*" (modo dev legacy).
+    CORS_ORIGINS: str = ""
+
+    # Multi-tenant (Fase 1)
+    # False = endpoints siguen funcionando sin tenant (transicion).
+    # True  = todo endpoint protegido requiere id_tenant en JWT.
+    TENANT_ENFORCEMENT: bool = False
+
+    # Redis (cache, pub/sub para websockets, rate-limit)
+    REDIS_URL: str = ""
 
     # Cloudinary (almacenamiento de evidencias)
     CLOUDINARY_CLOUD_NAME: str

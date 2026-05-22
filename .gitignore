@@ -9,6 +9,23 @@ ENV/
 .env.local
 .env.*.local
 
+# Credenciales de servicios externos (NUNCA commitar)
+firebase-credentials.json
+google-services.json
+google-services*.json
+serviceAccountKey*.json
+*.pem
+*.key
+secrets/
+
+# Scripts locales de debugging que NO deben subirse
+check_user_login.py
+check_tables.py
+seed_test_users.py
+test_db_connection.py
+test_rds_connection.py
+init_database.py
+
 # IDE
 .vscode/
 .idea/

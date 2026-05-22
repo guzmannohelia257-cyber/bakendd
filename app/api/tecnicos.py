@@ -17,16 +17,30 @@ from typing import List
 
 from app.db.session import get_db
 from app.models.user_model import Usuario
-from app.models.incidente import Asignacion, Incidente, Evidencia
+from app.models.taller import Taller
+from app.models.incidente import Asignacion, HistorialEstadoAsignacion, Incidente, Evidencia
+from app.models.ubicacion import UbicacionTecnico
 from app.models.usuario_taller import UsuarioTaller
 from app.models.catalogos import EstadoAsignacion, EstadoIncidente
 from app.schemas.taller_schema import (
     TecnicoAsignacionResponse, IniciarViajeRequest, CompletarAsignacionRequest,
     UbicacionTecnicoRequest, EvidenciaMiniT, MensajeResponse
 )
-from app.core.security import get_current_user
+from app.schemas.tecnico_schema import (
+    CambiarTallerResponse,
+    TallerActivoInfo,
+    TallerPublicoMini,
+    TecnicoLoginConTallerRequest,
+    TecnicoLoginResponse,
+    UsuarioMini,
+)
+from app.schemas.tracking_schema import UbicacionPing
+from app.core.security import create_access_token, get_current_user, verify_password
+from app.core.tenant_context import current_tenant
 from app.services.trazabilidad import cambiar_estado_asignacion, cambiar_estado_incidente
 from app.services.notificacion_service import crear_y_enviar_notificacion
+from app.services import tracking_service
+from app.services.notify_service import notify_incidente
 
 router = APIRouter(
     prefix="/tecnicos",
@@ -38,6 +52,155 @@ router = APIRouter(
     },
 )
 
+
+# ============================================================
+# M9 — Login multi-taller del tecnico (PRE-LOGIN selector)
+# ============================================================
+
+@router.get(
+    "/talleres-publicos",
+    response_model=List[TallerPublicoMini],
+    summary="Lista publica de talleres (selector pre-login del tecnico)",
+)
+def talleres_publicos(db: Session = Depends(get_db)):
+    """
+    Endpoint PUBLICO (sin auth). Devuelve info no sensible de talleres activos
+    para que la app movil del tecnico pueda mostrar el selector ANTES del login.
+    """
+    # Bypass del filtro tenant: no hay contexto al ser pre-login
+    tok = current_tenant.set(0)
+    try:
+        return (
+            db.query(Taller)
+            .filter(Taller.activo.is_(True))
+            .order_by(Taller.nombre)
+            .all()
+        )
+    finally:
+        current_tenant.reset(tok)
+
+
+@router.post(
+    "/login",
+    response_model=TecnicoLoginResponse,
+    summary="Login del tecnico contra un taller especifico",
+)
+def login_tecnico(body: TecnicoLoginConTallerRequest, db: Session = Depends(get_db)):
+    """
+    Valida:
+      1. email+password contra tabla usuario.
+      2. usuario.id_rol == 3 (tecnico).
+      3. existe UsuarioTaller activo entre este usuario y el id_taller indicado.
+    Emite JWT con `id_tenant` del taller -> filtro tenant aplica automaticamente.
+    """
+    # Bypass tenant para localizar usuario y vinculo (sin contexto previo)
+    tok = current_tenant.set(0)
+    try:
+        usuario = db.query(Usuario).filter(Usuario.email == body.email).first()
+        if not usuario or not verify_password(body.password, usuario.password_hash):
+            raise HTTPException(401, "Credenciales invalidas")
+        if usuario.id_rol != 3:
+            raise HTTPException(403, "Esta cuenta no es de tecnico")
+        if not usuario.activo:
+            raise HTTPException(403, "Cuenta desactivada")
+
+        vinculo = (
+            db.query(UsuarioTaller)
+            .join(Taller, Taller.id_taller == UsuarioTaller.id_taller)
+            .filter(
+                UsuarioTaller.id_usuario == usuario.id_usuario,
+                UsuarioTaller.id_taller == body.id_taller,
+                UsuarioTaller.activo.is_(True),
+            )
+            .first()
+        )
+        if not vinculo:
+            raise HTTPException(403, "No estas vinculado a este taller")
+
+        taller = vinculo.taller
+    finally:
+        current_tenant.reset(tok)
+
+    token = create_access_token(
+        subject_id=usuario.id_usuario,
+        tipo="usuario",
+        extra_claims={
+            "id_tenant": taller.id_tenant,
+            "id_taller_activo": taller.id_taller,
+        },
+    )
+    return TecnicoLoginResponse(
+        access_token=token,
+        usuario=UsuarioMini(
+            id_usuario=usuario.id_usuario,
+            nombre=usuario.nombre,
+            email=usuario.email,
+        ),
+        taller_activo=TallerActivoInfo(
+            id_taller=taller.id_taller,
+            id_tenant=taller.id_tenant,
+            nombre=taller.nombre,
+        ),
+    )
+
+
+@router.post(
+    "/me/cambiar-taller/{id_taller}",
+    response_model=CambiarTallerResponse,
+    summary="Tecnico cambia taller activo sin reloguearse",
+)
+def cambiar_taller_activo(
+    id_taller: int,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
+):
+    """
+    Permite al tecnico moverse entre talleres a los que esta vinculado sin
+    re-loguearse. Devuelve un nuevo JWT con el `id_tenant` del taller elegido.
+    """
+    if current_user.id_rol != 3:
+        raise HTTPException(403, "Solo tecnicos pueden cambiar taller activo")
+
+    tok = current_tenant.set(0)
+    try:
+        vinculo = (
+            db.query(UsuarioTaller)
+            .join(Taller, Taller.id_taller == UsuarioTaller.id_taller)
+            .filter(
+                UsuarioTaller.id_usuario == current_user.id_usuario,
+                UsuarioTaller.id_taller == id_taller,
+                UsuarioTaller.activo.is_(True),
+            )
+            .first()
+        )
+    finally:
+        current_tenant.reset(tok)
+
+    if not vinculo:
+        raise HTTPException(404, "No estas vinculado a ese taller")
+
+    taller = vinculo.taller
+    token = create_access_token(
+        subject_id=current_user.id_usuario,
+        tipo="usuario",
+        extra_claims={
+            "id_tenant": taller.id_tenant,
+            "id_taller_activo": taller.id_taller,
+        },
+    )
+    return CambiarTallerResponse(
+        access_token=token,
+        taller_activo=TallerActivoInfo(
+            id_taller=taller.id_taller,
+            id_tenant=taller.id_tenant,
+            nombre=taller.nombre,
+        ),
+    )
+
+
+# ============================================================
+# Endpoints existentes (protegidos)
+# ============================================================
 
 @router.get(
     "/asignacion-actual",
@@ -110,6 +273,114 @@ def actualizar_ubicacion(
     db.commit()
 
     return {"mensaje": f"Ubicación actualizada: {payload.latitud}, {payload.longitud}"}
+
+
+@router.post(
+    "/me/ubicacion",
+    summary="Tecnico envia su ubicacion actual (cada 10-15s mientras va en viaje)",
+)
+async def reportar_ubicacion(
+    body: UbicacionPing,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
+):
+    if current_user.id_rol != 3:
+        raise HTTPException(403, "Solo tecnicos pueden reportar ubicacion")
+
+    # M9: usar id_tenant del JWT (taller activo elegido al login),
+    # NO `.first()` arbitrario. Si el token no trae tenant, el tecnico debe
+    # re-loguearse via POST /tecnicos/login con id_taller.
+    tid = current_tenant.get()
+    if tid is None:
+        raise HTTPException(
+            400,
+            "Token sin id_tenant. Vuelve a iniciar sesion via POST /tecnicos/login indicando id_taller.",
+        )
+
+    vinculo = (
+        db.query(UsuarioTaller)
+        .join(Taller, Taller.id_taller == UsuarioTaller.id_taller)
+        .filter(
+            UsuarioTaller.id_usuario == current_user.id_usuario,
+            Taller.id_tenant == tid,
+            UsuarioTaller.activo.is_(True),
+        )
+        .first()
+    )
+    if not vinculo:
+        raise HTTPException(403, "Tu token no corresponde a un taller donde trabajes activamente")
+
+    vinculo.latitud = body.latitud
+    vinculo.longitud = body.longitud
+
+    asig: Asignacion | None = None
+    if body.id_asignacion:
+        asig = db.query(Asignacion).get(body.id_asignacion)
+        if not asig or asig.id_taller != vinculo.id_taller:
+            raise HTTPException(403, "Esa asignacion no es de tu taller")
+
+        db.add(
+            UbicacionTecnico(
+                id_tenant=vinculo.taller.id_tenant,
+                id_usuario=current_user.id_usuario,
+                id_asignacion=asig.id_asignacion,
+                latitud=body.latitud,
+                longitud=body.longitud,
+                accuracy_m=body.accuracy_m,
+                velocidad_kmh=body.velocidad_kmh,
+            )
+        )
+
+    db.commit()
+
+    eta_resp = None
+    llegado_auto = False
+    if asig:
+        incidente = db.query(Incidente).get(asig.id_incidente)
+
+        dist_km, eta_seg = await tracking_service.calcular_eta(
+            body.latitud, body.longitud, incidente.latitud, incidente.longitud
+        )
+        eta_resp = {
+            "distancia_km": round(dist_km, 2),
+            "eta_segundos": eta_seg,
+            "eta_minutos": round(eta_seg / 60),
+        }
+
+        await notify_incidente(
+            asig.id_incidente,
+            "tecnico.posicion",
+            {
+                "id_asignacion": asig.id_asignacion,
+                "latitud": body.latitud,
+                "longitud": body.longitud,
+                "eta": eta_resp,
+            },
+        )
+
+        if tracking_service.llego_geofence(
+            body.latitud, body.longitud, incidente.latitud, incidente.longitud
+        ) and asig.estado.nombre in ("aceptada", "en_camino"):
+            estado_llegado = db.query(EstadoAsignacion).filter_by(nombre="llegado").first()
+            if estado_llegado:
+                db.add(
+                    HistorialEstadoAsignacion(
+                        id_asignacion=asig.id_asignacion,
+                        id_estado_anterior=asig.id_estado_asignacion,
+                        id_estado_nuevo=estado_llegado.id_estado_asignacion,
+                        observacion="Auto: geofencing (radio 100m)",
+                    )
+                )
+                asig.id_estado_asignacion = estado_llegado.id_estado_asignacion
+                db.commit()
+                llegado_auto = True
+                await notify_incidente(
+                    asig.id_incidente,
+                    "asignacion.llegado",
+                    {"id_asignacion": asig.id_asignacion},
+                )
+
+    return {"ok": True, "eta": eta_resp, "llegado_auto": llegado_auto}
 
 
 # ============ EVIDENCIAS ============

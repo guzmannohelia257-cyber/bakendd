@@ -8,6 +8,7 @@ Endpoints para:
 - Obtener detalles de una incidencia (GET /incidencias/{id_incidente})
 """
 from fastapi import APIRouter, Depends, HTTPException, status, Query
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import date
@@ -18,6 +19,7 @@ from app.models.usuario_taller import UsuarioTaller
 from app.models.incidente import Incidente, Asignacion, CandidatoAsignacion, Evaluacion
 from app.models.catalogos import CategoriaProblema, Prioridad, EstadoIncidente, EstadoAsignacion
 from app.models.transaccional import Metrica
+from app.models.taller import Taller
 from pydantic import BaseModel, Field
 from app.schemas.incidente_schema import (
     IncidenteCreate,
@@ -31,8 +33,15 @@ from app.schemas.incidente_schema import (
     EvaluacionCreate,
     EvaluacionResponse,
 )
-from app.core.security import get_current_user
+from app.core.security import get_current_user, get_current_taller
+from app.core.tenant_context import current_tenant
 from app.services.ia_service import clasificar_incidente
+from app.services import matching_service
+from app.services.broadcast_service import (
+    broadcast_emergencia,
+    broadcast_incidente_tomado,
+    notify_cliente_asignado,
+)
 
 router = APIRouter(
     prefix="/incidencias",
@@ -135,7 +144,7 @@ def obtener_estados(
     summary="Reportar una emergencia vehicular",
     description="Crea un nuevo incidente. Valida que el vehículo pertenezca al usuario."
 )
-def reportar_incidencia(
+async def reportar_incidencia(
     incidente_in: IncidenteCreate,
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_user)
@@ -223,7 +232,85 @@ def reportar_incidencia(
     db.commit()
     db.refresh(nuevo_incidente)
 
+    talleres_dist = matching_service.buscar_talleres_compatibles(db, nuevo_incidente)
+    talleres = [t for t, _d in talleres_dist]
+    if talleres:
+        matching_service.crear_candidatos(db, nuevo_incidente, talleres_dist)
+        await broadcast_emergencia(nuevo_incidente, talleres)
+
     return nuevo_incidente
+
+
+@router.post(
+    "/{id_incidente}/aceptar",
+    summary="Taller acepta una emergencia entrante; primero gana",
+)
+async def aceptar_emergencia(
+    id_incidente: int,
+    db: Session = Depends(get_db),
+    current_taller: Taller = Depends(get_current_taller),
+):
+    token = current_tenant.set(0)
+    try:
+        inc: Incidente | None = (
+            db.execute(
+                select(Incidente)
+                .where(Incidente.id_incidente == id_incidente)
+                .with_for_update()
+            ).scalar_one_or_none()
+        )
+        if not inc:
+            raise HTTPException(404, "Incidente no existe")
+
+        cand = (
+            db.query(CandidatoAsignacion)
+            .filter_by(id_incidente=id_incidente, id_taller=current_taller.id_taller)
+            .first()
+        )
+        if not cand:
+            raise HTTPException(403, "Tu taller no fue convocado a esta emergencia")
+
+        existing = db.query(Asignacion).filter_by(id_incidente=id_incidente).first()
+        if existing:
+            raise HTTPException(
+                409,
+                f"Esta emergencia ya fue tomada por el taller {existing.id_taller}",
+            )
+
+        estado_aceptada = db.query(EstadoAsignacion).filter_by(nombre="aceptada").one()
+        asig = Asignacion(
+            id_tenant=current_taller.id_tenant,
+            id_incidente=id_incidente,
+            id_taller=current_taller.id_taller,
+            id_estado_asignacion=estado_aceptada.id_estado_asignacion,
+        )
+        db.add(asig)
+
+        cand.seleccionado = True
+        inc.id_tenant = current_taller.id_tenant
+
+        db.commit()
+        db.refresh(asig)
+
+        perdedores_q = (
+            db.query(Taller)
+            .join(CandidatoAsignacion, CandidatoAsignacion.id_taller == Taller.id_taller)
+            .filter(
+                CandidatoAsignacion.id_incidente == id_incidente,
+                CandidatoAsignacion.id_taller != current_taller.id_taller,
+            )
+            .all()
+        )
+        await broadcast_incidente_tomado(inc, current_taller, perdedores_q)
+        await notify_cliente_asignado(inc, current_taller, asig)
+    finally:
+        current_tenant.reset(token)
+
+    return {
+        "id_asignacion": asig.id_asignacion,
+        "id_taller": current_taller.id_taller,
+        "nuevo_estado": "aceptada",
+    }
 
 
 @router.get(

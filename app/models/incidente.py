@@ -11,6 +11,7 @@ class Incidente(Base):
     __tablename__ = "incidente"
 
     id_incidente = Column(Integer, primary_key=True, index=True)
+    id_tenant = Column(Integer, ForeignKey("tenant.id_tenant"), nullable=True, index=True)
     id_usuario = Column(Integer, ForeignKey("usuario.id_usuario"), nullable=False, index=True)
     id_vehiculo = Column(Integer, ForeignKey("vehiculo.id_vehiculo"), nullable=False)
     id_estado = Column(Integer, ForeignKey("estado_incidente.id_estado"), nullable=False, index=True)
@@ -44,6 +45,7 @@ class Asignacion(Base):
     __tablename__ = "asignacion"
 
     id_asignacion = Column(Integer, primary_key=True, index=True)
+    id_tenant = Column(Integer, ForeignKey("tenant.id_tenant"), nullable=True, index=True)
     id_incidente = Column(Integer, ForeignKey("incidente.id_incidente"), nullable=False, index=True)
     id_taller = Column(Integer, ForeignKey("taller.id_taller"), nullable=False, index=True)
     id_usuario = Column(Integer, ForeignKey("usuario.id_usuario"), nullable=True)  # Técnico (usuario con rol=3)
@@ -52,6 +54,12 @@ class Asignacion(Base):
     eta_minutos = Column(Integer, nullable=True)
     costo_estimado = Column(Numeric(10, 2), nullable=True)
     nota_taller = Column(Text, nullable=True)
+
+    cancelada_at = Column(DateTime(timezone=True), nullable=True)
+    motivo_cancelacion = Column(String(500), nullable=True)
+    cancelada_por = Column(String(20), nullable=True)
+    compensacion_monto = Column(Numeric(10, 2), nullable=True)
+    compensacion_pagada = Column(Boolean, default=False, nullable=False)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
@@ -71,6 +79,7 @@ class Evidencia(Base):
     __tablename__ = "evidencia"
 
     id_evidencia = Column(Integer, primary_key=True, index=True)
+    id_tenant = Column(Integer, ForeignKey("tenant.id_tenant"), nullable=True, index=True)
     id_incidente = Column(Integer, ForeignKey("incidente.id_incidente"), nullable=False, index=True)
     id_tipo_evidencia = Column(Integer, ForeignKey("tipo_evidencia.id_tipo_evidencia"), nullable=False)
 
@@ -155,6 +164,7 @@ class Evaluacion(Base):
     __tablename__ = "evaluacion"
 
     id_evaluacion = Column(Integer, primary_key=True, index=True)
+    id_tenant = Column(Integer, ForeignKey("tenant.id_tenant"), nullable=True, index=True)
     id_incidente = Column(Integer, ForeignKey("incidente.id_incidente"), unique=True, nullable=False)
     id_usuario = Column(Integer, ForeignKey("usuario.id_usuario"), nullable=False)
     id_taller = Column(Integer, ForeignKey("taller.id_taller"), nullable=False)

@@ -1,0 +1,30 @@
+[run]
+source = app
+omit =
+    app/main.py
+    app/db/session.py
+    app/ai_modules/audio.py
+    app/ai_modules/vision.py
+    # Servicios legacy del 1er parcial - cubrirlos esta fuera de scope C1/C2
+    app/services/asignacion.py
+    app/services/trazabilidad.py
+    app/services/notificacion_service.py
+    app/services/ia_service.py
+    app/services/cloudinary_service.py
+    # APIs legacy (las del 1er parcial mantienen cobertura aparte)
+    app/api/admin.py
+    app/api/diagnostico.py
+    app/api/evidencias.py
+    app/api/mensajes.py
+    app/api/notificaciones.py
+    app/api/pagos.py
+    app/api/vehiculos.py
+    app/api/users.py
+    */__init__.py
+
+[report]
+exclude_lines =
+    pragma: no cover
+    raise NotImplementedError
+    if __name__ == .__main__.:
+    if TYPE_CHECKING:

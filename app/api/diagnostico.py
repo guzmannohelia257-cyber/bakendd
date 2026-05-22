@@ -1,13 +1,15 @@
 """Endpoint de diagnóstico de hora del servidor"""
-from fastapi import APIRouter, Query, Header
+from fastapi import APIRouter, Query, Header, Depends
 from datetime import datetime
 from app.core.config import get_settings
 from app.core.security import verify_token
+from app.api.tenants import _require_super_admin
 import calendar
 
 router = APIRouter(
     prefix="/diagnostico",
-    tags=["Diagnóstico"],
+    tags=["Admin"],
+    dependencies=[Depends(_require_super_admin)],
 )
 
 @router.get("/hora")

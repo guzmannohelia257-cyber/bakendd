@@ -35,6 +35,7 @@ class TallerResponse(BaseModel):
     latitud: Optional[float] = None
     longitud: Optional[float] = None
     capacidad_max: int
+    tarifa_traslado: float
     disponible: bool
     activo: bool
     verificado: bool
@@ -322,3 +323,40 @@ class UsuarioTallerListResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# ============ SERVICIOS DEL TALLER ============
+
+class TallerServicioCreate(BaseModel):
+    id_categoria: int = Field(..., gt=0)
+    servicio_movil: bool = False
+    tarifa_base: Optional[float] = Field(None, ge=0)
+
+
+class TallerServicioResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id_taller_servicio: int
+    id_taller: int
+    id_categoria: int
+    servicio_movil: bool
+    tarifa_base: Optional[float] = None
+
+
+class TallerConServicios(TallerResponse):
+    """Taller incluyendo lista de servicios que ofrece."""
+    servicios: List[TallerServicioResponse] = []
+
+
+class ActualizarServiciosTallerRequest(BaseModel):
+    """
+    Reemplaza la lista completa de servicios del taller (idempotente).
+    """
+    servicios: List[TallerServicioCreate]
+
+
+class TallerCompatibleResponse(TallerResponse):
+    """Taller candidato para un incidente, incluye distancia."""
+    distancia_km: Optional[float] = None
+    tarifa_base: Optional[float] = None
+    rating_promedio: Optional[float] = None

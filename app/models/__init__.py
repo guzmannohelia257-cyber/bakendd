@@ -2,6 +2,7 @@
 Modelos SQLAlchemy de la aplicación.
 Importar desde aquí garantiza que todas las tablas queden registradas en Base.metadata.
 """
+from app.models.tenant import Plan, Tenant, Suscripcion, TenantUser
 from app.models.catalogos import (
     Rol,
     EstadoIncidente,
@@ -24,9 +25,16 @@ from app.models.incidente import (
     CandidatoAsignacion,
     Evaluacion,
 )
+from app.models.cotizacion import Cotizacion, EstadoCotizacion
 from app.models.transaccional import Notificacion, Pago, Metrica, Mensaje
+from app.models.ubicacion import UbicacionTecnico
 
 __all__ = [
+    # Multi-tenant
+    "Plan",
+    "Tenant",
+    "Suscripcion",
+    "TenantUser",
     # Catálogos
     "Rol",
     "EstadoIncidente",
@@ -51,9 +59,12 @@ __all__ = [
     "HistorialEstadoAsignacion",
     "CandidatoAsignacion",
     "Evaluacion",
+    "Cotizacion",
+    "EstadoCotizacion",
     # Transaccional
     "Notificacion",
     "Pago",
     "Metrica",
     "Mensaje",
+    "UbicacionTecnico",
 ]

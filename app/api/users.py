@@ -7,7 +7,7 @@ Endpoints para:
 - Edición de perfil protegida
 - Dar de baja (baja lógica)
 """
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.models.user_model import Usuario, Rol
@@ -26,6 +26,7 @@ from app.core.security import (
     create_access_token,
     get_current_user
 )
+from app.core.rate_limit import limiter
 
 router = APIRouter(
     prefix="/usuarios",
@@ -114,7 +115,9 @@ def registrar_usuario(
     summary="Autenticarse e iniciar sesión",
     description="Valida email y contraseña, retorna JWT token"
 )
+@limiter.limit("10/minute")
 def login(
+    request: Request,
     credenciales: LoginRequest,
     db: Session = Depends(get_db)
 ):

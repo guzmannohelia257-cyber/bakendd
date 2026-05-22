@@ -90,7 +90,7 @@ class EscenarioInput:
 @dataclass
 class EscenarioResultado:
     incidente: Incidente
-    asignacion: Asignacion
+    asignacion: Optional[Asignacion]
     evidencias: list[Evidencia] = field(default_factory=list)
     cotizacion: Optional[Cotizacion] = None
     pago: Optional[Pago] = None
@@ -200,38 +200,45 @@ def crear_escenario(db: Session, ctx: Ctx, e: EscenarioInput) -> EscenarioResult
         ))
 
     # ── Asignacion ─────────────────────────────────────────────────────────
-    asignacion = Asignacion(
-        id_tenant=id_tenant,
-        id_incidente=incidente.id_incidente,
-        id_taller=taller.id_taller,
-        id_usuario=tecnico.id_usuario if tecnico else None,
-        id_estado_asignacion=ctx.estado_asignacion[e.estado_asignacion].id_estado_asignacion,
-        eta_minutos=20 if e.estado_asignacion not in ("pendiente",) else None,
-        costo_estimado=e.pago_monto if e.estado_asignacion == "completada" else None,
-        nota_taller=e.nota_taller,
-        cancelada_at=ahora if e.estado_asignacion == "cancelada" else None,
-        motivo_cancelacion=e.motivo_cancelacion,
-        cancelada_por=e.cancelada_por,
-    )
-    db.add(asignacion)
-    db.flush()
+    # Importante: cuando estado_asignacion == 'pendiente' NO creamos fila en
+    # `asignacion`: en la realidad la asignacion solo se materializa cuando un
+    # taller acepta. Mientras tanto solo existen los `candidato_asignacion`.
+    # Esto evita que en el historial del cliente aparezcan acciones (Mensajes,
+    # Ver tecnico, etc.) cuando todavia ningun taller confirmo.
+    asignacion: Optional[Asignacion] = None
+    if e.estado_asignacion != "pendiente":
+        asignacion = Asignacion(
+            id_tenant=id_tenant,
+            id_incidente=incidente.id_incidente,
+            id_taller=taller.id_taller,
+            id_usuario=tecnico.id_usuario if tecnico else None,
+            id_estado_asignacion=ctx.estado_asignacion[e.estado_asignacion].id_estado_asignacion,
+            eta_minutos=20,
+            costo_estimado=e.pago_monto if e.estado_asignacion == "completada" else None,
+            nota_taller=e.nota_taller,
+            cancelada_at=ahora if e.estado_asignacion == "cancelada" else None,
+            motivo_cancelacion=e.motivo_cancelacion,
+            cancelada_por=e.cancelada_por,
+        )
+        db.add(asignacion)
+        db.flush()
 
-    # ── Historial asignacion: pendiente -> ... -> estado_final ─────────────
-    db.add(HistorialEstadoAsignacion(
-        id_asignacion=asignacion.id_asignacion,
-        id_estado_anterior=None,
-        id_estado_nuevo=ctx.estado_asignacion["pendiente"].id_estado_asignacion,
-        observacion=f"Motor selecciono {taller.nombre}",
-    ))
-    prev_asig = "pendiente"
-    for siguiente in TRANSICIONES_ASIGNACION[e.estado_asignacion]:
+        # ── Historial asignacion: pendiente -> ... -> estado_final ─────────
         db.add(HistorialEstadoAsignacion(
             id_asignacion=asignacion.id_asignacion,
-            id_estado_anterior=ctx.estado_asignacion[prev_asig].id_estado_asignacion,
-            id_estado_nuevo=ctx.estado_asignacion[siguiente].id_estado_asignacion,
-            observacion=f"Transicion a {siguiente}",
+            id_estado_anterior=None,
+            id_estado_nuevo=ctx.estado_asignacion["pendiente"].id_estado_asignacion,
+            observacion=f"Motor selecciono {taller.nombre}",
         ))
-        prev_asig = siguiente
+        prev_asig = "pendiente"
+        for siguiente in TRANSICIONES_ASIGNACION[e.estado_asignacion]:
+            db.add(HistorialEstadoAsignacion(
+                id_asignacion=asignacion.id_asignacion,
+                id_estado_anterior=ctx.estado_asignacion[prev_asig].id_estado_asignacion,
+                id_estado_nuevo=ctx.estado_asignacion[siguiente].id_estado_asignacion,
+                observacion=f"Transicion a {siguiente}",
+            ))
+            prev_asig = siguiente
 
     # ── Cotizacion (opcional) ──────────────────────────────────────────────
     cotizacion = None
@@ -317,7 +324,8 @@ def crear_escenario(db: Session, ctx: Ctx, e: EscenarioInput) -> EscenarioResult
 
     db.commit()
     db.refresh(incidente)
-    db.refresh(asignacion)
+    if asignacion is not None:
+        db.refresh(asignacion)
 
     ctx.escenarios_creados += 1
     logger.info(

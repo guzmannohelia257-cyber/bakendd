@@ -113,13 +113,22 @@ ESTADOS_INCIDENTE = [
 ]
 
 CATEGORIAS = [
-    ("bateria", "Problemas de batería"),
-    ("llanta", "Llanta desinflada o reventada"),
-    ("choque", "Colisión o accidente"),
-    ("motor", "Fallas del motor"),
-    ("llaves", "Llaves perdidas o bloqueadas"),
-    ("otros", "Otros problemas"),
-    ("incierto", "Sin clasificar"),
+    # (codigo, nombre, descripcion, requiere_cotizacion)
+    ("bateria",          "bateria",              "Problemas de batería",                  False),
+    ("llanta_pinchada",  "llanta",               "Llanta desinflada o reventada",         False),
+    ("choque",           "choque",               "Colisión o accidente",                  False),
+    ("motor",            "motor",                "Fallas del motor",                      False),
+    ("llaves",           "llaves",               "Llaves perdidas o bloqueadas",          False),
+    ("otros",            "otros",                "Otros problemas",                       False),
+    ("incierto",         "incierto",             "Sin clasificar",                        False),
+    # Categorias canonicas (las que esperan los tests + KPIs + dashboard taller)
+    ("llantas",          "Servicio de llantas",  "Cambio / reparacion de llantas",        False),
+    ("mecanica_general", "Mecanica general",     "Diagnostico y mecanica de taller",      True),
+    ("electrico",        "Servicio electrico",   "Sistema electrico del vehiculo",        True),
+    ("electronico",      "Servicio electronico", "Computadora y electronica",             True),
+    ("chaperia_pintura", "Chaperia y pintura",   "Carroceria y pintura",                  True),
+    ("grua_auxilio",     "Grua / Auxilio vial",  "Traslado del vehiculo",                 False),
+    ("rutinario",        "Servicio rutinario",   "Mantenimiento programado",              False),
 ]
 
 PRIORIDADES = [("baja", 1), ("media", 2), ("alta", 3), ("critica", 4)]
@@ -314,7 +323,10 @@ def _truncate_all(db: Session) -> None:
 def _seed_catalogos(db: Session) -> None:
     db.add_all([Rol(nombre=n) for n in ROLES])
     db.add_all([EstadoIncidente(nombre=n, descripcion=d) for n, d in ESTADOS_INCIDENTE])
-    db.add_all([CategoriaProblema(nombre=n, descripcion=d) for n, d in CATEGORIAS])
+    db.add_all([
+        CategoriaProblema(codigo=cod, nombre=n, descripcion=d, requiere_cotizacion=req)
+        for cod, n, d, req in CATEGORIAS
+    ])
     db.add_all([Prioridad(nivel=n, orden=o) for n, o in PRIORIDADES])
     db.add_all([EstadoAsignacion(nombre=n) for n in ESTADOS_ASIGNACION])
     db.add_all([TipoEvidencia(nombre=n) for n in TIPOS_EVIDENCIA])

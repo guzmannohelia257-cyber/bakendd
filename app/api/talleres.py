@@ -720,11 +720,24 @@ def rechazar_asignacion(
         if siguiente:
             # Marcar nuevo candidato como seleccionado
             siguiente.seleccionado = True
-            
-            # Crear nueva asignación para el siguiente candidato
+
+            # Crear nueva asignación para el siguiente candidato.
+            # Importante: hay que setear el id_tenant del taller destino, sino
+            # las queries multi-tenant del nuevo taller no encuentran la
+            # asignación y queda invisible en su dashboard.
+            # Resolvemos el tenant del destino vía SQL plano (sin scoping por
+            # tenant), ya que el candidato puede pertenecer a otro tenant.
             estado_pendiente = db.query(EstadoAsignacion).filter_by(nombre="pendiente").first()
-            if estado_pendiente:
+            from sqlalchemy import text as _sql_text
+            row = db.execute(
+                _sql_text("SELECT id_tenant FROM taller WHERE id_taller = :tid"),
+                {"tid": siguiente.id_taller},
+            ).first()
+            id_tenant_destino = row[0] if row else None
+
+            if estado_pendiente and id_tenant_destino is not None:
                 nueva_asignacion = Asignacion(
+                    id_tenant=id_tenant_destino,
                     id_incidente=incidente.id_incidente,
                     id_taller=siguiente.id_taller,
                     id_estado_asignacion=estado_pendiente.id_estado_asignacion,
@@ -732,11 +745,20 @@ def rechazar_asignacion(
                 db.add(nueva_asignacion)
                 db.flush()
                 
-                # Registrar creación de nueva asignación en historial
+                # Registrar creación de nueva asignación en historial.
+                # score_total puede ser None si el matching no lo calculó.
+                score_txt = (
+                    f"{siguiente.score_total:.2f}"
+                    if siguiente.score_total is not None
+                    else "n/a"
+                )
                 registrar_cambio_estado_asignacion(
                     db, nueva_asignacion, None, estado_pendiente.id_estado_asignacion,
-                    observacion=f"Reasignación automática tras rechazo de taller {current_taller.id_taller}. "
-                                f"Nuevo taller: {siguiente.id_taller} (score: {siguiente.score_total:.2f})"
+                    observacion=(
+                        f"Reasignación automática tras rechazo de taller "
+                        f"{current_taller.id_taller}. "
+                        f"Nuevo taller: {siguiente.id_taller} (score: {score_txt})"
+                    ),
                 )
                 # TODO CU-32: enviar push notification al nuevo taller
         else:

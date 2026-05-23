@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./venv/Scripts/pytest tests/ -v --tb=line)",
+      "Bash(./venv/Scripts/pytest tests/ --tb=line -q)",
+      "Bash(./venv/Scripts/pytest tests/test_e2e_flujos_globales.py -v --tb=short)",
+      "Bash(./venv/Scripts/pytest tests/ -q --tb=line)",
+      "Bash(./venv/Scripts/pytest tests/test_e2e_flujos_globales.py::test_taller_rechaza_pasa_a_siguiente_candidato -v --tb=long)",
+      "Bash(./venv/Scripts/pytest tests/test_e2e_flujos_globales.py::test_taller_rechaza_pasa_a_siguiente_candidato -v)",
+      "Bash(git commit -m ' *)"
+    ]
+  }
+}

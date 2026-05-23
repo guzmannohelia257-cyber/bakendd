@@ -17,8 +17,8 @@ from SETT.utils import Ctx, logger
 
 def run(db: Session, ctx: Ctx) -> None:
     db.add_all([
-        CategoriaProblema(nombre=n, descripcion=d, requiere_cotizacion=req)
-        for n, d, req in CATEGORIAS
+        CategoriaProblema(codigo=cod, nombre=n, descripcion=d, requiere_cotizacion=req)
+        for cod, n, d, req in CATEGORIAS
     ])
     db.add_all([Prioridad(nivel=n, orden=o) for n, o in PRIORIDADES])
     db.add_all([TipoEvidencia(nombre=n) for n in TIPOS_EVIDENCIA])

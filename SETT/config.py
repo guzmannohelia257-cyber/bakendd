@@ -35,21 +35,23 @@ ESTADOS_PAGO = ["pendiente", "procesando", "completado", "fallido", "reembolsado
 ESTADOS_COTIZACION = ["pendiente", "enviada", "aceptada", "rechazada", "expirada"]
 
 CATEGORIAS = [
-    # (nombre, descripcion, requiere_cotizacion)
-    ("bateria",                "Problemas de bateria",                False),
-    ("llanta",                 "Llanta desinflada o reventada",       False),
-    ("choque",                 "Colision o accidente",                False),
-    ("motor",                  "Fallas del motor",                    False),
-    ("llaves",                 "Llaves perdidas o bloqueadas",        False),
-    ("otros",                  "Otros problemas",                     False),
-    ("incierto",               "Sin clasificar",                      False),
-    ("Servicio de llantas",    "Cambio / reparacion de llantas",      False),
-    ("Mecanica general",       "Diagnostico y mecanica de taller",    True),
-    ("Servicio electrico",     "Sistema electrico del vehiculo",      True),
-    ("Servicio electronico",   "Computadora y electronica",           True),
-    ("Chaperia y pintura",     "Carroceria y pintura",                True),
-    ("Grua / Auxilio vial",    "Traslado del vehiculo",               False),
-    ("Servicio rutinario",     "Mantenimiento programado",            False),
+    # (codigo, nombre, descripcion, requiere_cotizacion)
+    # Categorias clasicas (usadas por la IA y el flujo basico)
+    ("bateria",          "bateria",              "Problemas de bateria",              False),
+    ("llanta_pinchada",  "llanta",               "Llanta desinflada o reventada",     False),
+    ("choque",           "choque",               "Colision o accidente",              False),
+    ("motor",            "motor",                "Fallas del motor",                  False),
+    ("llaves",           "llaves",               "Llaves perdidas o bloqueadas",      False),
+    ("otros",            "otros",                "Otros problemas",                   False),
+    ("incierto",         "incierto",             "Sin clasificar",                    False),
+    # Categorias canonicas con codigo (usadas por el dashboard del taller, KPIs y tests)
+    ("llantas",          "Servicio de llantas",  "Cambio / reparacion de llantas",    False),
+    ("mecanica_general", "Mecanica general",     "Diagnostico y mecanica de taller",  True),
+    ("electrico",        "Servicio electrico",   "Sistema electrico del vehiculo",    True),
+    ("electronico",      "Servicio electronico", "Computadora y electronica",         True),
+    ("chaperia_pintura", "Chaperia y pintura",   "Carroceria y pintura",              True),
+    ("grua_auxilio",     "Grua / Auxilio vial",  "Traslado del vehiculo",             False),
+    ("rutinario",        "Servicio rutinario",   "Mantenimiento programado",          False),
 ]
 
 PRIORIDADES = [("baja", 1), ("media", 2), ("alta", 3), ("critica", 4)]

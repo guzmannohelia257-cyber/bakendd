@@ -79,3 +79,15 @@ Thumbs.db
 *.tmp
 *.bak
 .temp/
+
+# ============================================================
+# Documentacion: NO subir markdown ni carpetas de guias.
+# Lo unico documental que se sube es CREDENCIALES.txt.
+# (requirements.txt se mantiene: es manifiesto de dependencias)
+# ============================================================
+*.md
+guias/
+guias2/
+diagramas base de datos/
+comando.txt
+transcripcion_completa.txt

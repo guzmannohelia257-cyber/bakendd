@@ -1,0 +1,61 @@
+============================================================
+ FLUJO EMERGENCIA — CREDENCIALES DE PRUEBA
+============================================================
+ Cuentas sembradas por: python -m seeders.seed_full
+ Base local: yary2_emergencias (PostgreSQL, puerto 5432)
+ Backend local: http://localhost:8002
+============================================================
+
+
+ADMINISTRADOR  (login web /dashboard/admin)
+------------------------------------------------------------
+  Nombre    : Administración General
+  Email     : admin.general@gmail.com
+  Password  : admin2026#
+
+
+TALLERES / GERENTES  (login web /dashboard/taller)
+------------------------------------------------------------
+  Password de todos los talleres: taller2026#
+
+  | Taller                       | Email                          |
+  |------------------------------|--------------------------------|
+  | AutoRescate Santa Cruz       | autorescate.scz@gmail.com      |
+  | Taller Hermanos Justiniano   | hermanos.justiniano@gmail.com  |
+  | Mecánica El Carmen           | mecanica.elcarmen@gmail.com    |
+
+
+TÉCNICOS  (login app móvil / rol técnico)
+------------------------------------------------------------
+  Password de todos los técnicos: tecnico2026#
+
+  | Técnico            | Email                       | Taller                      |
+  |--------------------|-----------------------------|-----------------------------|
+  | Rodrigo Áñez       | rodrigo.anez@gmail.com      | AutoRescate Santa Cruz      |
+  | Fernando Suárez    | fernando.suarez@gmail.com   | AutoRescate Santa Cruz      |
+  | Marco Peña         | marco.pena@gmail.com        | Taller Hermanos Justiniano  |
+  | Sergio Vaca        | sergio.vaca@gmail.com       | Taller Hermanos Justiniano  |
+  | Iván Roca          | ivan.roca@gmail.com         | Mecánica El Carmen          |
+  | Hugo Méndez        | hugo.mendez@gmail.com       | Mecánica El Carmen          |
+
+
+CLIENTES  (login app móvil / rol cliente)
+------------------------------------------------------------
+  Password de todos los clientes: cliente2026#
+
+  | Cliente            | Email                        | Vehículo                  |
+  |--------------------|------------------------------|---------------------------|
+  | Lucía Gutiérrez    | lucia.gutierrez@gmail.com    | Toyota Corolla (SCZ-001)  |
+  | Andrés Camacho     | andres.camacho@gmail.com     | Nissan Sentra (SCZ-002)   |
+  | Valeria Rojas      | valeria.rojas@gmail.com      | Suzuki Swift (SCZ-003)    |
+  | Diego Salvatierra  | diego.salvatierra@gmail.com  | Kia Picanto (SCZ-004)     |
+  | Camila Ortiz       | camila.ortiz@gmail.com       | Chevrolet Spark (SCZ-005) |
+
+
+------------------------------------------------------------
+ Cómo regenerar estas cuentas (re-siembra idempotente):
+   cd Backend
+   venv\Scripts\activate.bat
+   set PYTHONIOENCODING=utf-8
+   python -m seeders.seed_full
+------------------------------------------------------------

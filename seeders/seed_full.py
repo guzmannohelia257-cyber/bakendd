@@ -63,6 +63,7 @@ from app.models.incidente import (
     Incidente,
 )
 from app.models.taller import Taller, TallerServicio
+from app.models.tenant import Plan, Suscripcion, Tenant
 from app.models.transaccional import Mensaje, Metrica, Notificacion, Pago
 from app.models.usuario import Usuario, Vehiculo
 from app.models.usuario_taller import UsuarioTaller
@@ -89,6 +90,10 @@ TABLAS_A_LIMPIAR = [
     "taller_servicio",
     "usuario",
     "taller",
+    "tenant_user",
+    "suscripcion",
+    "tenant",
+    "plan",
     "rol",
     "estado_incidente",
     "categoria_problema",
@@ -143,17 +148,17 @@ ESTADOS_PAGO = ["pendiente", "procesando", "completado", "fallido", "reembolsado
 # ── Datos de prueba ───────────────────────────────────────────────────────────
 
 ADMIN = {
-    "nombre": "Administrador Sistema",
-    "email": "admin.flujoemergencia@gmail.com",
-    "password": "admin123!",
+    "nombre": "Administración General",
+    "email": "admin.general@gmail.com",
+    "password": "admin2026#",
     "telefono": "+591 70000000",
 }
 
 TALLERES = [
     {
-        "nombre": "Taller Excelente",
-        "email": "tallerexcelente.demo@gmail.com",
-        "password": "taller123!",
+        "nombre": "AutoRescate Santa Cruz",
+        "email": "autorescate.scz@gmail.com",
+        "password": "taller2026#",
         "telefono": "+591 70011111",
         "direccion": "Av. Cristo Redentor #500, Santa Cruz",
         "latitud": -17.802625,
@@ -163,9 +168,9 @@ TALLERES = [
         "categorias": ["bateria", "llanta", "motor", "choque", "llaves", "otros", "incierto"],
     },
     {
-        "nombre": "Mecánica Central SC",
-        "email": "mecanicacentralsc.demo@gmail.com",
-        "password": "taller123!",
+        "nombre": "Taller Hermanos Justiniano",
+        "email": "hermanos.justiniano@gmail.com",
+        "password": "taller2026#",
         "telefono": "+591 70022222",
         "direccion": "2do Anillo y Av. Alemana, Santa Cruz",
         "latitud": -17.781230,
@@ -174,9 +179,9 @@ TALLERES = [
         "categorias": ["motor", "bateria", "choque", "llaves", "incierto"],
     },
     {
-        "nombre": "Llantería El Cristo",
-        "email": "llanteriaelcristo.demo@gmail.com",
-        "password": "taller123!",
+        "nombre": "Mecánica El Carmen",
+        "email": "mecanica.elcarmen@gmail.com",
+        "password": "taller2026#",
         "telefono": "+591 70033333",
         "direccion": "Av. Cristo Redentor km 4",
         "latitud": -17.815320,
@@ -189,49 +194,49 @@ TALLERES = [
 # 2 técnicos por taller (índice 0..2)
 TECNICOS = [
     # Taller 1
-    {"nombre": "Juan Pérez",     "email": "juanperez.tecnico@gmail.com",     "password": "tecnico123!", "telefono": "+591 71011111", "taller_idx": 0},
-    {"nombre": "Carlos Gómez",   "email": "carlosgomez.tecnico@gmail.com",   "password": "tecnico123!", "telefono": "+591 71011112", "taller_idx": 0},
+    {"nombre": "Rodrigo Áñez",     "email": "rodrigo.anez@gmail.com",      "password": "tecnico2026#", "telefono": "+591 71011111", "taller_idx": 0},
+    {"nombre": "Fernando Suárez",  "email": "fernando.suarez@gmail.com",   "password": "tecnico2026#", "telefono": "+591 71011112", "taller_idx": 0},
     # Taller 2
-    {"nombre": "Luis Rodríguez", "email": "luisrodriguez.tecnico@gmail.com", "password": "tecnico123!", "telefono": "+591 71022221", "taller_idx": 1},
-    {"nombre": "Mario López",    "email": "mariolopez.tecnico@gmail.com",    "password": "tecnico123!", "telefono": "+591 71022222", "taller_idx": 1},
+    {"nombre": "Marco Peña",       "email": "marco.pena@gmail.com",        "password": "tecnico2026#", "telefono": "+591 71022221", "taller_idx": 1},
+    {"nombre": "Sergio Vaca",      "email": "sergio.vaca@gmail.com",       "password": "tecnico2026#", "telefono": "+591 71022222", "taller_idx": 1},
     # Taller 3
-    {"nombre": "Pedro Vargas",   "email": "pedrovargas.tecnico@gmail.com",   "password": "tecnico123!", "telefono": "+591 71033331", "taller_idx": 2},
-    {"nombre": "Diego Mamani",   "email": "diegomamani.tecnico@gmail.com",   "password": "tecnico123!", "telefono": "+591 71033332", "taller_idx": 2},
+    {"nombre": "Iván Roca",        "email": "ivan.roca@gmail.com",         "password": "tecnico2026#", "telefono": "+591 71033331", "taller_idx": 2},
+    {"nombre": "Hugo Méndez",      "email": "hugo.mendez@gmail.com",       "password": "tecnico2026#", "telefono": "+591 71033332", "taller_idx": 2},
 ]
 
 CLIENTES = [
     {
-        "nombre": "Juan Conductor",
-        "email": "juanconductor.cliente@gmail.com",
-        "password": "cliente123!",
+        "nombre": "Lucía Gutiérrez",
+        "email": "lucia.gutierrez@gmail.com",
+        "password": "cliente2026#",
         "telefono": "+591 70111001",
         "vehiculo": {"placa": "SCZ-001", "marca": "Toyota", "modelo": "Corolla", "anio": 2021, "color": "Blanco"},
     },
     {
-        "nombre": "Ana Pérez",
-        "email": "anaperez.cliente@gmail.com",
-        "password": "cliente123!",
+        "nombre": "Andrés Camacho",
+        "email": "andres.camacho@gmail.com",
+        "password": "cliente2026#",
         "telefono": "+591 70111002",
         "vehiculo": {"placa": "SCZ-002", "marca": "Nissan", "modelo": "Sentra", "anio": 2020, "color": "Rojo"},
     },
     {
-        "nombre": "Pedro Ramírez",
-        "email": "pedroramirez.cliente@gmail.com",
-        "password": "cliente123!",
+        "nombre": "Valeria Rojas",
+        "email": "valeria.rojas@gmail.com",
+        "password": "cliente2026#",
         "telefono": "+591 70111003",
         "vehiculo": {"placa": "SCZ-003", "marca": "Suzuki", "modelo": "Swift", "anio": 2022, "color": "Azul"},
     },
     {
-        "nombre": "María Flores",
-        "email": "mariaflores.cliente@gmail.com",
-        "password": "cliente123!",
+        "nombre": "Diego Salvatierra",
+        "email": "diego.salvatierra@gmail.com",
+        "password": "cliente2026#",
         "telefono": "+591 70111004",
         "vehiculo": {"placa": "SCZ-004", "marca": "Kia", "modelo": "Picanto", "anio": 2023, "color": "Negro"},
     },
     {
-        "nombre": "Carlos Quispe",
-        "email": "carlosquispe.cliente@gmail.com",
-        "password": "cliente123!",
+        "nombre": "Camila Ortiz",
+        "email": "camila.ortiz@gmail.com",
+        "password": "cliente2026#",
         "telefono": "+591 70111005",
         "vehiculo": {"placa": "SCZ-005", "marca": "Chevrolet", "modelo": "Spark", "anio": 2019, "color": "Gris"},
     },
@@ -239,7 +244,7 @@ CLIENTES = [
 
 # Cinco escenarios — 1 incidente por cliente, sin solapamiento de activos.
 # taller_idx=0 (Taller Excelente) recibe la evaluación para que las estrellas
-# aparezcan en el dashboard cuando el usuario loguea como tallerexcelente.demo@gmail.com
+# aparezcan en el dashboard cuando el usuario loguea como autorescate.scz@gmail.com
 INCIDENTES = [
     {
         "cliente_idx": 0,
@@ -353,11 +358,54 @@ def _seed_admin(db: Session) -> Usuario:
     return admin
 
 
-def _seed_talleres(db: Session) -> list[Taller]:
+def _seed_planes_y_tenants(db: Session) -> list[Tenant]:
+    """Crea el plan `free` + un tenant por taller (slug derivado del email)."""
+    plan_free = db.query(Plan).filter_by(codigo="free").first()
+    if plan_free is None:
+        plan_free = Plan(
+            codigo="free",
+            nombre="Free",
+            descripcion="Plan inicial",
+            precio_mensual=0,
+            moneda="USD",
+            max_talleres=1,
+            max_tecnicos=5,
+            activo=True,
+        )
+        db.add(plan_free)
+        db.flush()
+
+    tenants: list[Tenant] = []
+    for t in TALLERES:
+        slug = t["email"].split("@")[0].replace(".", "-")
+        tenant = Tenant(
+            slug=slug,
+            nombre=t["nombre"],
+            email_contacto=t["email"],
+            telefono=t.get("telefono"),
+            activo=True,
+        )
+        db.add(tenant)
+        db.flush()
+        db.add(Suscripcion(
+            id_tenant=tenant.id_tenant,
+            id_plan=plan_free.id_plan,
+            estado="activa",
+        ))
+        tenants.append(tenant)
+    db.commit()
+    for t in tenants:
+        db.refresh(t)
+    logger.info(f"[seed] Plan 'free' + {len(tenants)} tenants creados")
+    return tenants
+
+
+def _seed_talleres(db: Session, tenants: list[Tenant]) -> list[Taller]:
     cat_by_name = {c.nombre: c for c in db.query(CategoriaProblema).all()}
     talleres: list[Taller] = []
-    for t in TALLERES:
+    for idx, t in enumerate(TALLERES):
         taller = Taller(
+            id_tenant=tenants[idx].id_tenant,
             nombre=t["nombre"],
             email=t["email"],
             password_hash=hash_password(t["password"]),
@@ -728,7 +776,8 @@ def run() -> None:
         _truncate_all(db)
         _seed_catalogos(db)
         _seed_admin(db)
-        talleres = _seed_talleres(db)
+        tenants = _seed_planes_y_tenants(db)
+        talleres = _seed_talleres(db, tenants)
         tecnicos = _seed_tecnicos(db, talleres)
         clientes, vehiculos = _seed_clientes(db)
         _seed_incidentes(db, clientes, vehiculos, talleres, tecnicos)

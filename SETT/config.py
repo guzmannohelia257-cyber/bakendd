@@ -105,9 +105,9 @@ PLANES = [
 # ── Admin ────────────────────────────────────────────────────────────────────
 
 ADMIN = {
-    "nombre": "Administrador Sistema",
-    "email": "admin.flujoemergencia@gmail.com",
-    "password": "admin123!",
+    "nombre": "Administración General",
+    "email": "admin.general@gmail.com",
+    "password": "admin2026#",
     "telefono": "+591 70000000",
 }
 
@@ -117,12 +117,12 @@ ADMIN = {
 
 TALLERES = [
     {
-        "slug": "taller-excelente",
-        "tenant_nombre": "Taller Excelente Org",
+        "slug": "autorescate-scz",
+        "tenant_nombre": "AutoRescate Santa Cruz Org",
         "plan": "enterprise",
-        "nombre": "Taller Excelente",
-        "email": "tallerexcelente.demo@gmail.com",
-        "password": "taller123!",
+        "nombre": "AutoRescate Santa Cruz",
+        "email": "autorescate.scz@gmail.com",
+        "password": "taller2026#",
         "telefono": "+591 70011111",
         "direccion": "Av. Cristo Redentor #500, Santa Cruz",
         "latitud": -17.802625,
@@ -136,12 +136,12 @@ TALLERES = [
         ],
     },
     {
-        "slug": "mecanica-central",
-        "tenant_nombre": "Mecanica Central SC",
+        "slug": "hermanos-justiniano",
+        "tenant_nombre": "Taller Hermanos Justiniano Org",
         "plan": "pro",
-        "nombre": "Mecanica Central SC",
-        "email": "mecanicacentralsc.demo@gmail.com",
-        "password": "taller123!",
+        "nombre": "Taller Hermanos Justiniano",
+        "email": "hermanos.justiniano@gmail.com",
+        "password": "taller2026#",
         "telefono": "+591 70022222",
         "direccion": "2do Anillo y Av. Alemana, Santa Cruz",
         "latitud": -17.781230,
@@ -153,12 +153,12 @@ TALLERES = [
         ],
     },
     {
-        "slug": "llanteria-cristo",
-        "tenant_nombre": "Llanteria El Cristo",
+        "slug": "mecanica-elcarmen",
+        "tenant_nombre": "Mecánica El Carmen Org",
         "plan": "free",
-        "nombre": "Llanteria El Cristo",
-        "email": "llanteriaelcristo.demo@gmail.com",
-        "password": "taller123!",
+        "nombre": "Mecánica El Carmen",
+        "email": "mecanica.elcarmen@gmail.com",
+        "password": "taller2026#",
         "telefono": "+591 70033333",
         "direccion": "Av. Cristo Redentor km 4",
         "latitud": -17.815320,
@@ -176,12 +176,12 @@ TALLERES = [
 # taller_idx referencia la posicion en TALLERES.
 
 TECNICOS = [
-    {"nombre": "Juan Perez",     "email": "juanperez.tecnico@gmail.com",     "password": "tecnico123!", "telefono": "+591 71011111", "taller_idx": 0},
-    {"nombre": "Carlos Gomez",   "email": "carlosgomez.tecnico@gmail.com",   "password": "tecnico123!", "telefono": "+591 71011112", "taller_idx": 0},
-    {"nombre": "Luis Rodriguez", "email": "luisrodriguez.tecnico@gmail.com", "password": "tecnico123!", "telefono": "+591 71022221", "taller_idx": 1},
-    {"nombre": "Mario Lopez",    "email": "mariolopez.tecnico@gmail.com",    "password": "tecnico123!", "telefono": "+591 71022222", "taller_idx": 1},
-    {"nombre": "Pedro Vargas",   "email": "pedrovargas.tecnico@gmail.com",   "password": "tecnico123!", "telefono": "+591 71033331", "taller_idx": 2},
-    {"nombre": "Diego Mamani",   "email": "diegomamani.tecnico@gmail.com",   "password": "tecnico123!", "telefono": "+591 71033332", "taller_idx": 2},
+    {"nombre": "Rodrigo Áñez",    "email": "rodrigo.anez@gmail.com",     "password": "tecnico2026#", "telefono": "+591 71011111", "taller_idx": 0},
+    {"nombre": "Fernando Suárez", "email": "fernando.suarez@gmail.com",  "password": "tecnico2026#", "telefono": "+591 71011112", "taller_idx": 0},
+    {"nombre": "Marco Peña",      "email": "marco.pena@gmail.com",       "password": "tecnico2026#", "telefono": "+591 71022221", "taller_idx": 1},
+    {"nombre": "Sergio Vaca",     "email": "sergio.vaca@gmail.com",      "password": "tecnico2026#", "telefono": "+591 71022222", "taller_idx": 1},
+    {"nombre": "Iván Roca",       "email": "ivan.roca@gmail.com",        "password": "tecnico2026#", "telefono": "+591 71033331", "taller_idx": 2},
+    {"nombre": "Hugo Méndez",     "email": "hugo.mendez@gmail.com",      "password": "tecnico2026#", "telefono": "+591 71033332", "taller_idx": 2},
 ]
 
 
@@ -191,24 +191,24 @@ TECNICOS = [
 
 CLIENTES = [
     # Incidentes basicos (7 estados de asignacion)
-    {"key": "cli_pendiente",      "nombre": "Lucia Pendiente",     "email": "lucia.pendiente.demo@gmail.com",      "password": "cliente123!", "telefono": "+591 70111001", "vehiculo": {"placa": "SCZ-001", "marca": "Toyota",    "modelo": "Corolla",  "anio": 2021, "color": "Blanco"}},
-    {"key": "cli_aceptada",       "nombre": "Mario Aceptada",      "email": "mario.aceptada.demo@gmail.com",       "password": "cliente123!", "telefono": "+591 70111002", "vehiculo": {"placa": "SCZ-002", "marca": "Nissan",    "modelo": "Sentra",   "anio": 2020, "color": "Rojo"}},
-    {"key": "cli_rechazada",      "nombre": "Sofia Rechazada",     "email": "sofia.rechazada.demo@gmail.com",      "password": "cliente123!", "telefono": "+591 70111003", "vehiculo": {"placa": "SCZ-003", "marca": "Suzuki",    "modelo": "Swift",    "anio": 2022, "color": "Azul"}},
-    {"key": "cli_en_camino",      "nombre": "Diego En Camino",     "email": "diego.encamino.demo@gmail.com",       "password": "cliente123!", "telefono": "+591 70111004", "vehiculo": {"placa": "SCZ-004", "marca": "Kia",       "modelo": "Picanto",  "anio": 2023, "color": "Negro"}},
-    {"key": "cli_llegado",        "nombre": "Carla Llegado",       "email": "carla.llegado.demo@gmail.com",        "password": "cliente123!", "telefono": "+591 70111005", "vehiculo": {"placa": "SCZ-005", "marca": "Chevrolet", "modelo": "Spark",    "anio": 2019, "color": "Gris"}},
-    {"key": "cli_atendido",       "nombre": "Ramiro Atendido",     "email": "ramiro.atendido.demo@gmail.com",      "password": "cliente123!", "telefono": "+591 70111006", "vehiculo": {"placa": "SCZ-006", "marca": "Honda",     "modelo": "Civic",    "anio": 2018, "color": "Plateado"}},
-    {"key": "cli_cancelado",      "nombre": "Veronica Cancelado",  "email": "veronica.cancelado.demo@gmail.com",   "password": "cliente123!", "telefono": "+591 70111007", "vehiculo": {"placa": "SCZ-007", "marca": "Hyundai",   "modelo": "Accent",   "anio": 2017, "color": "Verde"}},
+    {"key": "cli_pendiente",      "nombre": "Lucia Pendiente",     "email": "lucia.pendiente.demo@gmail.com",      "password": "cliente2026#", "telefono": "+591 70111001", "vehiculo": {"placa": "SCZ-001", "marca": "Toyota",    "modelo": "Corolla",  "anio": 2021, "color": "Blanco"}},
+    {"key": "cli_aceptada",       "nombre": "Mario Aceptada",      "email": "mario.aceptada.demo@gmail.com",       "password": "cliente2026#", "telefono": "+591 70111002", "vehiculo": {"placa": "SCZ-002", "marca": "Nissan",    "modelo": "Sentra",   "anio": 2020, "color": "Rojo"}},
+    {"key": "cli_rechazada",      "nombre": "Sofia Rechazada",     "email": "sofia.rechazada.demo@gmail.com",      "password": "cliente2026#", "telefono": "+591 70111003", "vehiculo": {"placa": "SCZ-003", "marca": "Suzuki",    "modelo": "Swift",    "anio": 2022, "color": "Azul"}},
+    {"key": "cli_en_camino",      "nombre": "Diego En Camino",     "email": "diego.encamino.demo@gmail.com",       "password": "cliente2026#", "telefono": "+591 70111004", "vehiculo": {"placa": "SCZ-004", "marca": "Kia",       "modelo": "Picanto",  "anio": 2023, "color": "Negro"}},
+    {"key": "cli_llegado",        "nombre": "Carla Llegado",       "email": "carla.llegado.demo@gmail.com",        "password": "cliente2026#", "telefono": "+591 70111005", "vehiculo": {"placa": "SCZ-005", "marca": "Chevrolet", "modelo": "Spark",    "anio": 2019, "color": "Gris"}},
+    {"key": "cli_atendido",       "nombre": "Ramiro Atendido",     "email": "ramiro.atendido.demo@gmail.com",      "password": "cliente2026#", "telefono": "+591 70111006", "vehiculo": {"placa": "SCZ-006", "marca": "Honda",     "modelo": "Civic",    "anio": 2018, "color": "Plateado"}},
+    {"key": "cli_cancelado",      "nombre": "Veronica Cancelado",  "email": "veronica.cancelado.demo@gmail.com",   "password": "cliente2026#", "telefono": "+591 70111007", "vehiculo": {"placa": "SCZ-007", "marca": "Hyundai",   "modelo": "Accent",   "anio": 2017, "color": "Verde"}},
     # Cotizaciones (5 estados)
-    {"key": "cli_cot_pendiente",  "nombre": "Andres CotPendiente", "email": "andres.cotpendiente.demo@gmail.com",   "password": "cliente123!", "telefono": "+591 70111008", "vehiculo": {"placa": "SCZ-008", "marca": "Mazda",     "modelo": "3",        "anio": 2020, "color": "Azul"}},
-    {"key": "cli_cot_enviada",    "nombre": "Paola CotEnviada",    "email": "paola.cotenviada.demo@gmail.com",      "password": "cliente123!", "telefono": "+591 70111009", "vehiculo": {"placa": "SCZ-009", "marca": "Volkswagen","modelo": "Gol",      "anio": 2019, "color": "Blanco"}},
-    {"key": "cli_cot_aceptada",   "nombre": "Jorge CotAceptada",   "email": "jorge.cotaceptada.demo@gmail.com",     "password": "cliente123!", "telefono": "+591 70111010", "vehiculo": {"placa": "SCZ-010", "marca": "Ford",      "modelo": "Fiesta",   "anio": 2021, "color": "Rojo"}},
-    {"key": "cli_cot_rechazada",  "nombre": "Elena CotRechazada",  "email": "elena.cotrechazada.demo@gmail.com",    "password": "cliente123!", "telefono": "+591 70111011", "vehiculo": {"placa": "SCZ-011", "marca": "Renault",   "modelo": "Logan",    "anio": 2022, "color": "Gris"}},
-    {"key": "cli_cot_expirada",   "nombre": "Pablo CotExpirada",   "email": "pablo.cotexpirada.demo@gmail.com",     "password": "cliente123!", "telefono": "+591 70111012", "vehiculo": {"placa": "SCZ-012", "marca": "Peugeot",   "modelo": "208",      "anio": 2018, "color": "Negro"}},
+    {"key": "cli_cot_pendiente",  "nombre": "Andres CotPendiente", "email": "andres.cotpendiente.demo@gmail.com",   "password": "cliente2026#", "telefono": "+591 70111008", "vehiculo": {"placa": "SCZ-008", "marca": "Mazda",     "modelo": "3",        "anio": 2020, "color": "Azul"}},
+    {"key": "cli_cot_enviada",    "nombre": "Paola CotEnviada",    "email": "paola.cotenviada.demo@gmail.com",      "password": "cliente2026#", "telefono": "+591 70111009", "vehiculo": {"placa": "SCZ-009", "marca": "Volkswagen","modelo": "Gol",      "anio": 2019, "color": "Blanco"}},
+    {"key": "cli_cot_aceptada",   "nombre": "Jorge CotAceptada",   "email": "jorge.cotaceptada.demo@gmail.com",     "password": "cliente2026#", "telefono": "+591 70111010", "vehiculo": {"placa": "SCZ-010", "marca": "Ford",      "modelo": "Fiesta",   "anio": 2021, "color": "Rojo"}},
+    {"key": "cli_cot_rechazada",  "nombre": "Elena CotRechazada",  "email": "elena.cotrechazada.demo@gmail.com",    "password": "cliente2026#", "telefono": "+591 70111011", "vehiculo": {"placa": "SCZ-011", "marca": "Renault",   "modelo": "Logan",    "anio": 2022, "color": "Gris"}},
+    {"key": "cli_cot_expirada",   "nombre": "Pablo CotExpirada",   "email": "pablo.cotexpirada.demo@gmail.com",     "password": "cliente2026#", "telefono": "+591 70111012", "vehiculo": {"placa": "SCZ-012", "marca": "Peugeot",   "modelo": "208",      "anio": 2018, "color": "Negro"}},
     # Pagos (estados adicionales)
-    {"key": "cli_pago_procesando","nombre": "Marta PagoProcesando","email": "marta.pagoprocesando.demo@gmail.com",  "password": "cliente123!", "telefono": "+591 70111013", "vehiculo": {"placa": "SCZ-013", "marca": "Fiat",      "modelo": "Mobi",     "anio": 2020, "color": "Blanco"}},
-    {"key": "cli_pago_fallido",   "nombre": "Cesar PagoFallido",   "email": "cesar.pagofallido.demo@gmail.com",     "password": "cliente123!", "telefono": "+591 70111014", "vehiculo": {"placa": "SCZ-014", "marca": "Subaru",    "modelo": "Impreza",  "anio": 2019, "color": "Azul"}},
-    {"key": "cli_pago_reembolso", "nombre": "Ines PagoReembolso",  "email": "ines.pagoreembolso.demo@gmail.com",    "password": "cliente123!", "telefono": "+591 70111015", "vehiculo": {"placa": "SCZ-015", "marca": "Mitsubishi","modelo": "Lancer",   "anio": 2017, "color": "Rojo"}},
-    {"key": "cli_pago_pendiente", "nombre": "Hugo PagoPendiente",  "email": "hugo.pagopendiente.demo@gmail.com",    "password": "cliente123!", "telefono": "+591 70111016", "vehiculo": {"placa": "SCZ-016", "marca": "Toyota",    "modelo": "Yaris",    "anio": 2022, "color": "Blanco"}},
+    {"key": "cli_pago_procesando","nombre": "Marta PagoProcesando","email": "marta.pagoprocesando.demo@gmail.com",  "password": "cliente2026#", "telefono": "+591 70111013", "vehiculo": {"placa": "SCZ-013", "marca": "Fiat",      "modelo": "Mobi",     "anio": 2020, "color": "Blanco"}},
+    {"key": "cli_pago_fallido",   "nombre": "Cesar PagoFallido",   "email": "cesar.pagofallido.demo@gmail.com",     "password": "cliente2026#", "telefono": "+591 70111014", "vehiculo": {"placa": "SCZ-014", "marca": "Subaru",    "modelo": "Impreza",  "anio": 2019, "color": "Azul"}},
+    {"key": "cli_pago_reembolso", "nombre": "Ines PagoReembolso",  "email": "ines.pagoreembolso.demo@gmail.com",    "password": "cliente2026#", "telefono": "+591 70111015", "vehiculo": {"placa": "SCZ-015", "marca": "Mitsubishi","modelo": "Lancer",   "anio": 2017, "color": "Rojo"}},
+    {"key": "cli_pago_pendiente", "nombre": "Hugo PagoPendiente",  "email": "hugo.pagopendiente.demo@gmail.com",    "password": "cliente2026#", "telefono": "+591 70111016", "vehiculo": {"placa": "SCZ-016", "marca": "Toyota",    "modelo": "Yaris",    "anio": 2022, "color": "Blanco"}},
 ]
 
 

@@ -25,20 +25,38 @@ def _init_firebase():
     if _firebase_app is not None:
         return _firebase_app
 
+    # Dos formas de proveer el service account de Firebase:
+    #  - FIREBASE_CREDENTIALS_JSON: el JSON completo como variable de entorno
+    #    (recomendado en Render: sin archivos en disco).
+    #  - FIREBASE_CREDENTIALS_PATH: ruta a un archivo .json.
+    creds_json = os.getenv("FIREBASE_CREDENTIALS_JSON")
     creds_path = os.getenv("FIREBASE_CREDENTIALS_PATH")
-    if not creds_path:
-        logger.warning("[FCM] FIREBASE_CREDENTIALS_PATH no configurado — push desactivado")
+    # En Render el Secret File se monta en /etc/secrets/. Si no se configuro
+    # ninguna variable, usamos esa ruta por defecto cuando el archivo existe.
+    if not creds_json and not creds_path:
+        default_secret = "/etc/secrets/firebase-credentials.json"
+        if os.path.exists(default_secret):
+            creds_path = default_secret
+    if not creds_json and not creds_path:
+        logger.warning(
+            "[FCM] Sin credenciales de Firebase (JSON / PATH / secret file) — push desactivado"
+        )
         return None
 
     try:
+        import json
+
         import firebase_admin
         from firebase_admin import credentials
 
-        if not firebase_admin._apps:
-            cred = credentials.Certificate(creds_path)
-            _firebase_app = firebase_admin.initialize_app(cred)
-        else:
+        if firebase_admin._apps:
             _firebase_app = firebase_admin.get_app()
+        else:
+            if creds_json:
+                cred = credentials.Certificate(json.loads(creds_json))
+            else:
+                cred = credentials.Certificate(creds_path)
+            _firebase_app = firebase_admin.initialize_app(cred)
         logger.info("[FCM] Firebase Admin SDK inicializado")
     except Exception as exc:
         logger.error(f"[FCM] Error al inicializar Firebase: {exc}")

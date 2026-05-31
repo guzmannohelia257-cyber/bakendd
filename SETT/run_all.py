@@ -44,6 +44,7 @@ from SETT.escenarios import (  # noqa: E402
     e13_pago_procesando, e14_pago_fallido, e15_pago_reembolsado,
     e16_pago_pendiente,
 )
+from SETT.escenarios import historico  # noqa: E402
 from SETT.utils import Ctx, ensure_tables, logger, resumen, truncate_all  # noqa: E402
 
 
@@ -97,6 +98,15 @@ def run() -> None:
         # ── Escenarios ─────────────────────────────────────────────
         for modulo in ESCENARIOS:
             modulo.run(db, ctx)
+
+        # ── Historico (~3 meses) para poblar los KPIs ──────────────
+        # Defensivo: si algo falla aqui NO debe romper el seed base ni el
+        # arranque del servidor, asi que se captura y se continua.
+        try:
+            historico.run(db, ctx)
+        except Exception:
+            db.rollback()
+            logger.exception("[SETT] historico fallo (no fatal, se continua)")
 
         resumen(db)
         logger.info(

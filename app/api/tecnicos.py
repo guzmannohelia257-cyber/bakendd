@@ -427,22 +427,31 @@ def listar_evidencias(
             detail="Solo técnicos pueden usar este endpoint",
         )
 
-    asignacion = db.query(Asignacion).filter(
-        Asignacion.id_asignacion == id_asignacion,
-        Asignacion.id_usuario == current_user.id_usuario,
-    ).first()
+    # Las evidencias las sube el cliente en el flujo público, donde no hay
+    # tenant en contexto, así que quedan con id_tenant NULL. Con el filtro
+    # global (include_legacy=False) una consulta tenant-scoped las ocultaría.
+    # Consultamos sin scope de tenant; la pertenencia ya se valida porque la
+    # asignación debe ser del técnico autenticado (Asignacion.id_usuario).
+    tok = current_tenant.set(0)
+    try:
+        asignacion = db.query(Asignacion).filter(
+            Asignacion.id_asignacion == id_asignacion,
+            Asignacion.id_usuario == current_user.id_usuario,
+        ).first()
 
-    if not asignacion:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Asignación no encontrada o no asignada a ti",
+        if not asignacion:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Asignación no encontrada o no asignada a ti",
+            )
+
+        return (
+            db.query(Evidencia)
+            .filter(Evidencia.id_incidente == asignacion.id_incidente)
+            .all()
         )
-
-    evidencias = db.query(Evidencia).filter(
-        Evidencia.id_incidente == asignacion.id_incidente
-    ).all()
-
-    return evidencias
+    finally:
+        current_tenant.reset(tok)
 
 
 # A.2 — CU-20: transiciones en_camino y completada

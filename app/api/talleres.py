@@ -550,7 +550,7 @@ def obtener_asignacion(
     summary="Aceptar una asignación",
     description="El taller confirma que se hará cargo del incidente. Pasa a estado 'aceptada'.",
 )
-def aceptar_asignacion(
+async def aceptar_asignacion(
     id_asignacion: int,
     payload: AceptarAsignacionRequest,
     db: Session = Depends(get_db),
@@ -668,6 +668,21 @@ def aceptar_asignacion(
                 "tipo": "asignacion_tecnico",
                 "id_incidente": str(asignacion.id_incidente),
                 "id_asignacion": str(asignacion.id_asignacion),
+            },
+        )
+
+        # Evento en tiempo real al técnico (canal usuario:{id_tecnico}) para que
+        # su panel se actualice sin recargar, igual que el cliente al ser asignado.
+        from app.services.notify_service import notify_usuario
+        await notify_usuario(
+            tecnico_user.id_usuario,
+            "asignacion.asignada",
+            {
+                "id_asignacion": asignacion.id_asignacion,
+                "id_incidente": asignacion.id_incidente,
+                "id_taller": current_taller.id_taller,
+                "taller_nombre": current_taller.nombre,
+                "eta_minutos": asignacion.eta_minutos,
             },
         )
 

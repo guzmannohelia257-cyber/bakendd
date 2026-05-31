@@ -13,6 +13,8 @@ Endpoints:
   GET    /admin/ganancias/mensual          → ganancias de la plataforma por mes
   GET    /admin/ganancias/por-taller       → comisión por taller con rating
 """
+import re
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from sqlalchemy import extract, func
@@ -20,6 +22,7 @@ from typing import List, Optional
 
 from app.db.session import get_db
 from app.models.taller import Taller, TallerServicio
+from app.models.tenant import Tenant
 from app.models.user_model import Usuario
 from app.models.incidente import Asignacion, Evaluacion
 from app.models.transaccional import Pago
@@ -172,7 +175,26 @@ def crear_taller(
             detail="Ya existe un taller con ese email",
         )
 
+    # Cada taller pertenece a su propio tenant (relación 1:1), igual que en el
+    # onboarding self-service. El slug se deriva del nombre y se hace único para
+    # satisfacer el constraint NOT NULL de taller.id_tenant.
+    base_slug = re.sub(r"[^a-z0-9]+", "-", payload.nombre.lower()).strip("-") or "taller"
+    slug = base_slug
+    n = 1
+    while db.query(Tenant).filter(Tenant.slug == slug).first() is not None:
+        n += 1
+        slug = f"{base_slug}-{n}"
+    tenant = Tenant(
+        slug=slug,
+        nombre=payload.nombre,
+        email_contacto=payload.email,
+        telefono=payload.telefono,
+    )
+    db.add(tenant)
+    db.flush()  # Obtener el id_tenant antes de crear el taller
+
     taller = Taller(
+        id_tenant=tenant.id_tenant,
         nombre=payload.nombre,
         email=payload.email,
         password_hash=hash_password(payload.password),

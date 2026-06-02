@@ -7,6 +7,7 @@ sin interrumpir el flujo de la aplicación (graceful degradation).
 """
 import logging
 import os
+import threading
 from typing import Optional
 
 from sqlalchemy.orm import Session
@@ -66,25 +67,35 @@ def _init_firebase():
 
 
 def _send_fcm(token: str, titulo: str, cuerpo: str, data: Optional[dict] = None) -> bool:
-    """Envía una notificación push mediante FCM. Retorna True si fue exitoso."""
+    """
+    Envía una notificación push FCM en un hilo aparte (NO bloqueante).
+
+    El envío a los servidores de Google puede tardar cientos de ms; hacerlo
+    síncrono dentro de un endpoint (p.ej. iniciar viaje / completar) ralentiza
+    la respuesta. La notificación ya queda persistida en BD, así que el push es
+    best-effort: se dispara en un hilo daemon y la respuesta HTTP no lo espera.
+    Retorna True si el envío fue encolado (no garantiza la entrega).
+    """
     app = _init_firebase()
     if app is None:
         return False
 
-    try:
-        from firebase_admin import messaging
+    def _enviar() -> None:
+        try:
+            from firebase_admin import messaging
 
-        message = messaging.Message(
-            notification=messaging.Notification(title=titulo, body=cuerpo),
-            data={k: str(v) for k, v in (data or {}).items()},
-            token=token,
-        )
-        response = messaging.send(message)
-        logger.info(f"[FCM] Mensaje enviado: {response}")
-        return True
-    except Exception as exc:
-        logger.error(f"[FCM] Error al enviar push a token {token[:12]}...: {exc}")
-        return False
+            message = messaging.Message(
+                notification=messaging.Notification(title=titulo, body=cuerpo),
+                data={k: str(v) for k, v in (data or {}).items()},
+                token=token,
+            )
+            response = messaging.send(message)
+            logger.info(f"[FCM] Mensaje enviado: {response}")
+        except Exception as exc:
+            logger.error(f"[FCM] Error al enviar push a token {token[:12]}...: {exc}")
+
+    threading.Thread(target=_enviar, daemon=True).start()
+    return True
 
 
 # API pública

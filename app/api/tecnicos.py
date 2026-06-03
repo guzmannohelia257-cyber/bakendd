@@ -38,7 +38,8 @@ from app.schemas.tracking_schema import UbicacionPing
 from app.core.security import create_access_token, get_current_user, verify_password
 from app.core.tenant_context import current_tenant
 from app.services.trazabilidad import cambiar_estado_asignacion, cambiar_estado_incidente
-from app.services.pago_service import evaluar_penalizacion_sla
+from app.services.pago_service import evaluar_penalizacion_sla, get_configuracion
+from app.services.cancelacion_service import hora_limite_llegada_cotizacion
 from app.services.notificacion_service import crear_y_enviar_notificacion
 from app.services import tracking_service
 from app.services.notify_service import notify_incidente
@@ -52,6 +53,19 @@ router = APIRouter(
         404: {"description": "No encontrado - Sin asignaciones activas"},
     },
 )
+
+
+def _con_sla_tolerancia(asignacion: Asignacion, db: Session) -> Asignacion:
+    """Adjunta la tolerancia SLA global a la asignacion antes de serializarla.
+
+    sla_tolerancia_min NO es columna de Asignacion: es configuracion global de
+    la plataforma (configuracion_plataforma). Se expone en la respuesta para que
+    la app del tecnico calcule la hora maxima de llegada (eta_minutos +
+    tolerancia) y avise del retraso. Se asigna como atributo de instancia (no se
+    persiste) justo antes de responder, despues de cualquier commit/refresh.
+    """
+    asignacion.sla_tolerancia_min = get_configuracion(db).sla_tolerancia_min
+    return asignacion
 
 
 # M9 — Login multi-taller del técnico (selector pre-login)
@@ -231,7 +245,7 @@ def obtener_asignacion_actual(
             detail="No tienes asignaciones activas en este momento",
         )
 
-    return asignacion
+    return _con_sla_tolerancia(asignacion, db)
 
 
 # Ubicación en tiempo real
@@ -337,10 +351,14 @@ async def reportar_ubicacion(
         dist_km, eta_seg = await tracking_service.calcular_eta(
             body.latitud, body.longitud, incidente.latitud, incidente.longitud
         )
+        # Hora limite de llegada de la cotizacion (T1 = en_camino + eta_minutos).
+        # Se envia al cliente para que muestre el aviso de retraso (en rojo si ya paso).
+        limite_llegada = hora_limite_llegada_cotizacion(db, asig)
         eta_resp = {
             "distancia_km": round(dist_km, 2),
             "eta_segundos": eta_seg,
             "eta_minutos": round(eta_seg / 60),
+            "hora_limite_llegada": limite_llegada.isoformat() if limite_llegada else None,
         }
 
         await notify_incidente(
@@ -411,7 +429,7 @@ def detalle_asignacion(
             detail="Asignacion no encontrada o no asignada a ti",
         )
 
-    return asignacion
+    return _con_sla_tolerancia(asignacion, db)
 
 
 @router.get(
@@ -522,7 +540,7 @@ def iniciar_viaje(
 
     db.commit()
     db.refresh(asignacion)
-    return asignacion
+    return _con_sla_tolerancia(asignacion, db)
 
 
 @router.put(
@@ -582,7 +600,7 @@ async def marcar_llegada(
             {"id_asignacion": asignacion.id_asignacion},
         )
 
-    return asignacion
+    return _con_sla_tolerancia(asignacion, db)
 
 
 @router.put(
@@ -714,4 +732,4 @@ def completar_asignacion(
 
     db.commit()
     db.refresh(asignacion)
-    return asignacion
+    return _con_sla_tolerancia(asignacion, db)

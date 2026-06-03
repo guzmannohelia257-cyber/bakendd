@@ -36,7 +36,7 @@ def cancelar_asignacion_endpoint(
     if not asig:
         raise HTTPException(404, "Asignacion no existe")
 
-    asig_actualizada, nuevo_estado = cancelacion_service.cancelar_asignacion(
+    asig_actualizada, nuevo_estado, exonerado_retraso = cancelacion_service.cancelar_asignacion(
         db=db,
         asignacion=asig,
         usuario=current_user,
@@ -51,6 +51,7 @@ def cancelar_asignacion_endpoint(
         compensacion_monto=float(asig_actualizada.compensacion_monto or 0),
         compensacion_pagada=asig_actualizada.compensacion_pagada,
         nuevo_estado=nuevo_estado,
+        penalizacion_exonerada_por_retraso=exonerado_retraso,
     )
 
 

@@ -19,6 +19,9 @@ class CancelacionResponse(BaseModel):
     compensacion_monto: float
     compensacion_pagada: bool
     nuevo_estado: str
+    # True si el monto es 0 porque el tecnico excedio la hora de llegada de la
+    # cotizacion (retraso del taller), no porque aun no hubiera salido.
+    penalizacion_exonerada_por_retraso: bool = False
 
 
 class TarifaTrasladoUpdate(BaseModel):

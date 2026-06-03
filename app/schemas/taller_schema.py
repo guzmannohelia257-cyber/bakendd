@@ -255,6 +255,10 @@ class TecnicoAsignacionResponse(BaseModel):
     id_usuario: int  # Usuario técnico
     id_taller: int
     eta_minutos: Optional[int] = None
+    # Tolerancia global del SLA de llegada (configuracion_plataforma.sla_tolerancia_min).
+    # No es columna de la asignacion: el router la adjunta antes de responder para
+    # que el tecnico calcule la hora maxima de llegada = eta_minutos + tolerancia.
+    sla_tolerancia_min: Optional[int] = None
     costo_estimado: Optional[float] = None
     costo_final: Optional[float] = None
     nota_taller: Optional[str] = None

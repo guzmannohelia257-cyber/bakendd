@@ -1,5 +1,5 @@
 """Logica de cancelacion con compensacion."""
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 
 from fastapi import HTTPException
@@ -44,12 +44,69 @@ def _factor_compensacion(tenant: Tenant | None, estado: str) -> Decimal | None:
     return (Decimal(str(pct)) / Decimal("100")).quantize(Decimal("0.01"))
 
 
+def _marcado_en_camino_at(db: Session, asignacion: Asignacion) -> datetime | None:
+    """Momento en que la asignacion paso a 'en_camino' (registro de historial).
+
+    El ETA de la cotizacion empieza a correr cuando el tecnico marca 'en_camino',
+    asi que ese instante es la base para calcular la hora de llegada prometida.
+    Devuelve None si la asignacion aun no inicio viaje.
+    """
+    estado_en_camino = (
+        db.query(EstadoAsignacion)
+        .filter(EstadoAsignacion.nombre == "en_camino")
+        .first()
+    )
+    if estado_en_camino is None:
+        return None
+    hist = (
+        db.query(HistorialEstadoAsignacion)
+        .filter(
+            HistorialEstadoAsignacion.id_asignacion == asignacion.id_asignacion,
+            HistorialEstadoAsignacion.id_estado_nuevo
+            == estado_en_camino.id_estado_asignacion,
+        )
+        .order_by(HistorialEstadoAsignacion.created_at.desc())
+        .first()
+    )
+    return hist.created_at if hist else None
+
+
+def hora_limite_llegada_cotizacion(
+    db: Session, asignacion: Asignacion
+) -> datetime | None:
+    """Hora limite de llegada prometida en la cotizacion (T1).
+
+    T1 = momento 'en_camino' + eta_minutos. Es la hora a la que el tecnico
+    deberia llegar segun la cotizacion. NO incluye la tolerancia del SLA.
+    Devuelve None si aun no inicio viaje o la asignacion no tiene eta.
+    """
+    eta = asignacion.eta_minutos
+    if not eta:
+        return None
+    en_camino_at = _marcado_en_camino_at(db, asignacion)
+    if en_camino_at is None:
+        return None
+    return en_camino_at + timedelta(minutes=eta)
+
+
+def tecnico_excedio_eta_cotizacion(db: Session, asignacion: Asignacion) -> bool:
+    """True si el tecnico ya paso la hora de llegada prometida en la cotizacion (T1).
+
+    Pasada esa hora el retraso es responsabilidad del taller, por lo que la
+    cancelacion del cliente no se penaliza.
+    """
+    limite = hora_limite_llegada_cotizacion(db, asignacion)
+    if limite is None:
+        return False
+    return datetime.now(timezone.utc) > limite
+
+
 def cancelar_asignacion(
     db: Session,
     asignacion: Asignacion,
     usuario: Usuario,
     motivo: str,
-) -> tuple[Asignacion, str]:
+) -> tuple[Asignacion, str, bool]:
     if asignacion.incidente.id_usuario != usuario.id_usuario:
         raise HTTPException(403, "Solo el dueno del incidente puede cancelar")
 
@@ -68,18 +125,35 @@ def cancelar_asignacion(
     base = Decimal(str(asignacion.costo_estimado or 0))
     compensacion = (base * factor).quantize(Decimal("0.01"))
 
+    # Excepcion: si el tecnico ya excedio la hora de llegada prometida en la
+    # cotizacion (momento 'en_camino' + eta_minutos) y todavia va en camino, el
+    # retraso es responsabilidad del taller: el cliente NO paga compensacion.
+    sin_penalizacion_por_retraso = (
+        estado_actual == "en_camino"
+        and tecnico_excedio_eta_cotizacion(db, asignacion)
+    )
+    if sin_penalizacion_por_retraso:
+        compensacion = Decimal("0.00")
+
     estado_cancelada = (
         db.query(EstadoAsignacion).filter(EstadoAsignacion.nombre == "cancelada").first()
     )
     if not estado_cancelada:
         raise HTTPException(500, "Catalogo estado_asignacion sin 'cancelada'")
 
+    observacion = f"Cancelado por cliente. Motivo: {motivo[:200]}"
+    if sin_penalizacion_por_retraso:
+        observacion = (
+            f"{observacion} | Sin compensacion: el tecnico excedio la hora de "
+            "llegada de la cotizacion"
+        )
+
     db.add(
         HistorialEstadoAsignacion(
             id_asignacion=asignacion.id_asignacion,
             id_estado_anterior=asignacion.id_estado_asignacion,
             id_estado_nuevo=estado_cancelada.id_estado_asignacion,
-            observacion=f"Cancelado por cliente. Motivo: {motivo[:200]}",
+            observacion=observacion[:500],
         )
     )
 
@@ -118,4 +192,4 @@ def cancelar_asignacion(
 
     db.commit()
     db.refresh(asignacion)
-    return asignacion, "cancelada"
+    return asignacion, "cancelada", sin_penalizacion_por_retraso

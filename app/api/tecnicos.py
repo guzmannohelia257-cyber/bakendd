@@ -354,9 +354,12 @@ async def reportar_ubicacion(
             },
         )
 
+        # Auto-marcar 'llegado' por geofence SOLO desde 'en_camino' (no desde
+        # 'aceptada'): asi el timestamp de 'en_camino' siempre queda registrado
+        # antes que el de 'llegado' y el SLA puede medir el tiempo de viaje.
         if tracking_service.llego_geofence(
             body.latitud, body.longitud, incidente.latitud, incidente.longitud
-        ) and asig.estado.nombre in ("aceptada", "en_camino"):
+        ) and asig.estado.nombre == "en_camino":
             estado_llegado = db.query(EstadoAsignacion).filter_by(nombre="llegado").first()
             if estado_llegado:
                 db.add(

@@ -18,6 +18,7 @@ from app.models.taller import Taller
 from app.models.transaccional import Notificacion
 from app.schemas.transaccional_schema import PushTokenRequest, NotificacionResponse
 from app.core.security import get_current_user, get_current_taller
+from app.core.tenant_context import current_tenant
 
 router = APIRouter(
     prefix="/notificaciones",
@@ -37,6 +38,15 @@ def registrar_push_token_usuario(
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_user),
 ):
+    # Un token FCM identifica al DISPOSITIVO. Si otro usuario lo tenía (uso
+    # previo en este mismo teléfono), se lo quitamos para que las notificaciones
+    # sigan al usuario con la sesión activa ahora. (Usuario no tiene id_tenant,
+    # así que el filtro global no aplica.)
+    if payload.push_token:
+        db.query(Usuario).filter(
+            Usuario.push_token == payload.push_token,
+            Usuario.id_usuario != current_user.id_usuario,
+        ).update({"push_token": None}, synchronize_session=False)
     current_user.push_token = payload.push_token
     db.commit()
 
@@ -89,6 +99,18 @@ def registrar_push_token_taller(
     db: Session = Depends(get_db),
     current_taller: Taller = Depends(get_current_taller),
 ):
+    # Mismo criterio que con usuarios: el token sigue al taller con sesión
+    # activa. Taller sí tiene id_tenant, así que omitimos el filtro global para
+    # poder limpiarlo en cualquier taller (otro tenant/dispositivo).
+    if payload.push_token:
+        tok = current_tenant.set(0)
+        try:
+            db.query(Taller).filter(
+                Taller.push_token == payload.push_token,
+                Taller.id_taller != current_taller.id_taller,
+            ).update({"push_token": None}, synchronize_session=False)
+        finally:
+            current_tenant.reset(tok)
     current_taller.push_token = payload.push_token
     db.commit()
 

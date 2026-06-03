@@ -18,19 +18,41 @@ from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.models.catalogos import EstadoAsignacion, EstadoPago, MetodoPago
+from app.models.configuracion import ConfiguracionPlataforma
 from app.models.cotizacion import Cotizacion, EstadoCotizacion
 from app.models.incidente import Asignacion, HistorialEstadoAsignacion, Incidente
 from app.models.taller import Taller, TallerServicio
-from app.models.tenant import Tenant
 from app.models.transaccional import Pago
 
 
 PENALIZACION_FIJA_USD = Decimal("5.00")
-PENALIZACION_SLA_DEFAULT_PCT = 15
-SLA_TOLERANCIA_MIN = 20
+SLA_PENALIZACION_DEFAULT_PCT = 15
+SLA_TOLERANCIA_DEFAULT_MIN = 20
 ESTIMACION_FALLBACK_USD = Decimal("20.00")
 ESTIMACION_HISTORICO_DIAS = 90
 ESTIMACION_HISTORICO_MINIMO = 3
+
+
+def get_configuracion(db: Session) -> ConfiguracionPlataforma:
+    """Devuelve la configuracion global singleton de la plataforma.
+
+    Si la fila no existe (p. ej. tras un reseed que hace TRUNCATE) la crea con
+    los valores por defecto (penalizacion 15%, tolerancia 20 min) y hace flush.
+    No hace commit: la transaccion la cierra quien invoca.
+    """
+    config = (
+        db.query(ConfiguracionPlataforma)
+        .order_by(ConfiguracionPlataforma.id.asc())
+        .first()
+    )
+    if config is None:
+        config = ConfiguracionPlataforma(
+            sla_penalizacion_pct=SLA_PENALIZACION_DEFAULT_PCT,
+            sla_tolerancia_min=SLA_TOLERANCIA_DEFAULT_MIN,
+        )
+        db.add(config)
+        db.flush()
+    return config
 
 
 def _estado_pago_id(db: Session, nombre: str) -> int:
@@ -315,8 +337,10 @@ def _ts_transicion(db: Session, id_asignacion: int, nombre_estado: str):
 def evaluar_penalizacion_sla(db: Session, asignacion: Asignacion) -> Optional[Pago]:
     """Penaliza al taller si incumplio el SLA de llegada.
 
-    Limite de llegada = eta_minutos + tolerancia (20 min). El tiempo real es la
-    diferencia entre el timestamp del estado 'llegado' y el de 'en_camino' en
+    Limite de llegada = eta_minutos + tolerancia, donde el porcentaje y la
+    tolerancia se leen de la configuracion GLOBAL de la plataforma
+    (ConfiguracionPlataforma). El tiempo real es la diferencia entre el
+    timestamp del estado 'llegado' y el de 'en_camino' en
     HistorialEstadoAsignacion. Si el tiempo real supera el limite, se cobra
     pct% del monto final del servicio (asignacion.costo_estimado).
 
@@ -335,16 +359,14 @@ def evaluar_penalizacion_sla(db: Session, asignacion: Asignacion) -> Optional[Pa
     if en_camino_ts is None or llegado_ts is None:
         return None
 
+    config = get_configuracion(db)
+    pct = config.sla_penalizacion_pct
+
     tiempo_real_min = (llegado_ts - en_camino_ts).total_seconds() / 60
-    limite = asignacion.eta_minutos + SLA_TOLERANCIA_MIN
+    limite = asignacion.eta_minutos + config.sla_tolerancia_min
     if tiempo_real_min <= limite:
         # El taller cumplio el SLA: no hay penalizacion.
         return None
-
-    tenant = (
-        db.query(Tenant).filter(Tenant.id_tenant == asignacion.id_tenant).first()
-    )
-    pct = tenant.pct_penalizacion_sla if tenant else PENALIZACION_SLA_DEFAULT_PCT
 
     monto = (
         Decimal(str(asignacion.costo_estimado)) * Decimal(pct) / Decimal("100")

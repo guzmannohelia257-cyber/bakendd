@@ -9,7 +9,7 @@ from app.core.security import get_current_taller, get_current_user
 from app.core.tenant_context import current_tenant
 from app.db.session import get_db
 from app.models.taller import Taller
-from app.schemas.kpi_schema import KpiResumen, TallerRanking
+from app.schemas.kpi_schema import KpiResumen, TallerKpiRow, TallerRanking
 from app.services import kpi_service
 
 
@@ -89,3 +89,59 @@ def ranking_mi_tenant(
     d = _parse_iso(desde) or kpi_service._rango_default()[0]
     h = _parse_iso(hasta) or kpi_service._rango_default()[1]
     return kpi_service.ranking_talleres(db, d, h, limite=20)
+
+
+@router.get(
+    "/admin/kpis/resumen",
+    response_model=KpiResumen,
+    summary="KPIs globales o de un taller (super-admin)",
+)
+def kpis_admin_resumen(
+    desde: Optional[str] = Query(None, description="ISO date (default: hace 30 dias)"),
+    hasta: Optional[str] = Query(None, description="ISO date (default: ahora)"),
+    id_tenant: Optional[int] = Query(None, description="Filtrar por taller/tenant; vacio = todos"),
+    sla_minutos: int = Query(60, ge=1, le=1440, description="Umbral SLA en minutos"),
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    if current_user.id_rol != 4:
+        raise HTTPException(403, "Requiere rol super-admin")
+
+    # Se omite el filtro global de tenant para poder consolidar todos los
+    # talleres (id_tenant=None) o filtrar por uno explicito.
+    tok = current_tenant.set(0)
+    try:
+        return kpi_service.resumen_completo(
+            db=db,
+            desde=_parse_iso(desde),
+            hasta=_parse_iso(hasta),
+            id_tenant=id_tenant,
+            sla_minutos=sla_minutos,
+        )
+    finally:
+        current_tenant.reset(tok)
+
+
+@router.get(
+    "/admin/kpis/por-taller",
+    response_model=List[TallerKpiRow],
+    summary="KPIs comparativos por taller (super-admin)",
+)
+def kpis_admin_por_taller(
+    desde: Optional[str] = Query(None),
+    hasta: Optional[str] = Query(None),
+    sla_minutos: int = Query(60, ge=1, le=1440),
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    if current_user.id_rol != 4:
+        raise HTTPException(403, "Requiere rol super-admin")
+
+    d = _parse_iso(desde) or kpi_service._rango_default()[0]
+    h = _parse_iso(hasta) or kpi_service._rango_default()[1]
+
+    tok = current_tenant.set(0)
+    try:
+        return kpi_service.kpis_por_taller(db, d, h, sla_minutos=sla_minutos)
+    finally:
+        current_tenant.reset(tok)

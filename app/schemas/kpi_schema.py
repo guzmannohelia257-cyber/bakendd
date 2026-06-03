@@ -29,8 +29,21 @@ class KpiResumen(BaseModel):
     tiempo_promedio_llegada_min: float
     incidentes_por_categoria: List[CategoriaCount]
     casos_cancelados: int = 0
+    total_incidentes: int = 0
     zonas_mas_incidentes: List[ZonaKpi] = []
     sla_cumplimiento: Optional[SlaKpi] = None
+
+
+class TallerKpiRow(BaseModel):
+    id_taller: int
+    id_tenant: Optional[int] = None
+    nombre: str
+    tiempo_asignacion_min: float
+    tiempo_llegada_min: float
+    total_incidentes: int
+    casos_cancelados: int
+    sla_porcentaje: float
+    completadas: int
 
 
 class TallerRanking(BaseModel):

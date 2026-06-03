@@ -622,8 +622,14 @@ def completar_asignacion(
             ),
         )
 
-    if payload.costo_final is not None:
-        asignacion.costo_estimado = payload.costo_final
+    # El monto final es obligatorio: sin el se generaba un cobro de $0 que el
+    # cliente no podia pagar (la pasarela exige monto_total > 0).
+    if payload.costo_final is None or payload.costo_final <= 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Debes ingresar el monto final del servicio (mayor a 0).",
+        )
+    asignacion.costo_estimado = payload.costo_final
     if payload.resumen_trabajo is not None:
         prev = asignacion.nota_taller or ""
         asignacion.nota_taller = f"{prev}\n[TRABAJO] {payload.resumen_trabajo}".strip()

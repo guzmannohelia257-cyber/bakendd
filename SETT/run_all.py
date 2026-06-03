@@ -28,6 +28,7 @@ from app.db.session import SessionLocal  # noqa: E402
 import app.models  # noqa: F401,E402  registra todas las tablas
 
 from SETT.catalogos import categorias as cat_categorias  # noqa: E402
+from SETT.catalogos import configuracion as cat_configuracion  # noqa: E402
 from SETT.catalogos import estados as cat_estados  # noqa: E402
 from SETT.catalogos import roles as cat_roles  # noqa: E402
 from SETT.config import TABLAS_A_LIMPIAR  # noqa: E402
@@ -87,6 +88,7 @@ def run() -> None:
         cat_roles.run(db, ctx)
         cat_estados.run(db, ctx)
         cat_categorias.run(db, ctx)
+        cat_configuracion.run(db, ctx)
 
         # ── Entidades ──────────────────────────────────────────────
         ent_planes.run(db, ctx)

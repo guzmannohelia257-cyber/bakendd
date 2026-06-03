@@ -7,7 +7,6 @@ from sqlalchemy.orm import Session
 
 from app.models.catalogos import EstadoAsignacion, EstadoPago, MetodoPago
 from app.models.incidente import Asignacion, HistorialEstadoAsignacion
-from app.models.taller import Taller
 from app.models.tenant import Tenant
 from app.models.transaccional import Pago
 from app.models.usuario import Usuario
@@ -58,15 +57,16 @@ def cancelar_asignacion(
     if estado_actual in ESTADOS_NO_CANCELABLES:
         raise HTTPException(409, f"No se puede cancelar una asignacion '{estado_actual}'")
 
-    taller: Taller = asignacion.taller
     # El tenant configura los porcentajes desde admin
     tenant = db.query(Tenant).filter_by(id_tenant=asignacion.id_tenant).first()
     factor = _factor_compensacion(tenant, estado_actual)
     if factor is None:
         raise HTTPException(500, f"Estado '{estado_actual}' sin regla de compensacion")
 
-    tarifa = Decimal(str(taller.tarifa_traslado or 0))
-    compensacion = (tarifa * factor).quantize(Decimal("0.01"))
+    # La compensacion es un porcentaje de la cotizacion que vio el cliente
+    # (costo_estimado de la asignacion), no de una tarifa de traslado aparte.
+    base = Decimal(str(asignacion.costo_estimado or 0))
+    compensacion = (base * factor).quantize(Decimal("0.01"))
 
     estado_cancelada = (
         db.query(EstadoAsignacion).filter(EstadoAsignacion.nombre == "cancelada").first()

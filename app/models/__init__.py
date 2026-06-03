@@ -28,6 +28,7 @@ from app.models.incidente import (
 from app.models.cotizacion import Cotizacion, EstadoCotizacion
 from app.models.transaccional import Adenda, Notificacion, Pago, Metrica, Mensaje
 from app.models.ubicacion import UbicacionTecnico
+from app.models.configuracion import ConfiguracionPlataforma
 
 __all__ = [
     # Multi-tenant
@@ -68,4 +69,6 @@ __all__ = [
     "Metrica",
     "Mensaje",
     "UbicacionTecnico",
+    # Configuracion global de la plataforma
+    "ConfiguracionPlataforma",
 ]

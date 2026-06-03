@@ -48,7 +48,6 @@ class TenantCancelacionPctUpdate(BaseModel):
     pct_cancel_pendiente: int = Field(..., ge=0, le=100)
     pct_cancel_aceptada: int = Field(..., ge=0, le=100)
     pct_cancel_en_camino: int = Field(..., ge=0, le=100)
-    pct_penalizacion_sla: Optional[int] = Field(None, ge=0, le=100)
 
 
 class TenantResponse(BaseModel):
@@ -64,7 +63,6 @@ class TenantResponse(BaseModel):
     pct_cancel_pendiente: int = 0
     pct_cancel_aceptada: int = 50
     pct_cancel_en_camino: int = 100
-    pct_penalizacion_sla: int = 15
     created_at: datetime
     updated_at: datetime
 

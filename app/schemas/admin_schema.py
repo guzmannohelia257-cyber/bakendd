@@ -101,3 +101,20 @@ class GananciaPorTallerResponse(BaseModel):
     total_monto: float
     filtro_año: Optional[int] = None
     filtro_mes: Optional[int] = None
+
+
+# Configuracion global de la plataforma (super-admin)
+
+class ConfiguracionResponse(BaseModel):
+    """Parametros globales que aplican a TODOS los talleres."""
+    sla_penalizacion_pct: int = Field(..., description="% que se cobra al taller por incumplir el SLA de llegada")
+    sla_tolerancia_min: int = Field(..., description="Minutos de tolerancia sobre el eta antes de penalizar")
+
+    class Config:
+        from_attributes = True
+
+
+class ConfiguracionUpdate(BaseModel):
+    """Actualizacion parcial: solo se aplican los campos enviados."""
+    sla_penalizacion_pct: Optional[int] = Field(None, ge=0, le=100)
+    sla_tolerancia_min: Optional[int] = Field(None, ge=0, le=600)

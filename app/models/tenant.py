@@ -76,9 +76,6 @@ class Tenant(Base):
     pct_cancel_aceptada = Column(Integer, default=50, nullable=False, server_default="50")
     pct_cancel_en_camino = Column(Integer, default=100, nullable=False, server_default="100")
 
-    # % de penalizacion al taller por incumplir el SLA de llegada (configurable por el admin)
-    pct_penalizacion_sla = Column(Integer, default=15, nullable=False, server_default="15")
-
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 

@@ -260,9 +260,6 @@ def actualizar_cancelacion_pct(
     tenant.pct_cancel_pendiente = body.pct_cancel_pendiente
     tenant.pct_cancel_aceptada = body.pct_cancel_aceptada
     tenant.pct_cancel_en_camino = body.pct_cancel_en_camino
-    # Solo se actualiza si el cliente lo envia (compatibilidad con llamadas viejas).
-    if body.pct_penalizacion_sla is not None:
-        tenant.pct_penalizacion_sla = body.pct_penalizacion_sla
     db.commit()
     db.refresh(tenant)
     return tenant

@@ -359,11 +359,27 @@ def sa_numeric():
     return Numeric(10, 6)
 
 
+def total_incidentes(
+    db: Session,
+    desde: datetime,
+    hasta: datetime,
+    id_tenant: Optional[int] = None,
+) -> int:
+    """Cantidad de incidentes creados en el rango (para tarjetas/comparativa)."""
+    q = select(func.count(Incidente.id_incidente)).where(
+        Incidente.created_at.between(desde, hasta)
+    )
+    if id_tenant is not None:
+        q = q.where(Incidente.id_tenant == id_tenant)
+    return int(db.execute(q).scalar() or 0)
+
+
 def resumen_completo(
     db: Session,
     desde: Optional[datetime] = None,
     hasta: Optional[datetime] = None,
     id_tenant: Optional[int] = None,
+    sla_minutos: int = SLA_MINUTOS_DEFAULT,
 ) -> dict:
     if desde is None or hasta is None:
         desde, hasta = _rango_default()
@@ -378,6 +394,45 @@ def resumen_completo(
         ),
         "incidentes_por_categoria": incidentes_por_categoria(db, desde, hasta, id_tenant),
         "casos_cancelados": incidentes_cancelados(db, desde, hasta, id_tenant),
+        "total_incidentes": total_incidentes(db, desde, hasta, id_tenant),
         "zonas_mas_incidentes": zonas_mas_incidentes(db, desde, hasta, id_tenant),
-        "sla_cumplimiento": cumplimiento_sla(db, desde, hasta, id_tenant),
+        "sla_cumplimiento": cumplimiento_sla(db, desde, hasta, id_tenant, sla_minutos),
     }
+
+
+def kpis_por_taller(
+    db: Session,
+    desde: datetime,
+    hasta: datetime,
+    sla_minutos: int = SLA_MINUTOS_DEFAULT,
+) -> list[dict]:
+    """KPIs escalares por cada taller activo, para la comparativa del super-admin.
+
+    Recorre los talleres y reutiliza las mismas funciones por tenant. Debe
+    invocarse con el filtro global de tenant desactivado (current_tenant.set(0)).
+    """
+    talleres = (
+        db.query(Taller).filter(Taller.activo.is_(True)).order_by(Taller.nombre).all()
+    )
+    filas: list[dict] = []
+    for t in talleres:
+        tid = t.id_tenant
+        sla = cumplimiento_sla(db, desde, hasta, tid, sla_minutos)
+        filas.append(
+            {
+                "id_taller": t.id_taller,
+                "id_tenant": tid,
+                "nombre": t.nombre,
+                "tiempo_asignacion_min": round(
+                    tiempo_promedio_asignacion_min(db, desde, hasta, tid), 2
+                ),
+                "tiempo_llegada_min": round(
+                    tiempo_promedio_llegada_min(db, desde, hasta, tid), 2
+                ),
+                "total_incidentes": total_incidentes(db, desde, hasta, tid),
+                "casos_cancelados": incidentes_cancelados(db, desde, hasta, tid),
+                "sla_porcentaje": sla["porcentaje"],
+                "completadas": sla["total_completadas"],
+            }
+        )
+    return filas

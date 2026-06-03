@@ -29,6 +29,7 @@ from app.models.transaccional import Pago
 from app.models.catalogos import EstadoAsignacion, EstadoPago, CategoriaProblema
 from app.core.security import get_current_admin, hash_password
 from app.services.notificacion_service import crear_y_enviar_notificacion
+from app.services.pago_service import get_configuracion
 from app.schemas.admin_schema import (
     TallerAdminCreate,
     TallerAdminResponse,
@@ -39,6 +40,8 @@ from app.schemas.admin_schema import (
     GananciaPorTallerResponse,
     CategoriaAdminCreate,
     CategoriaAdminResponse,
+    ConfiguracionResponse,
+    ConfiguracionUpdate,
 )
 
 router = APIRouter(
@@ -481,3 +484,43 @@ def enviar_notificacion_prueba(
         "enviado_push": notif.enviado_push,
         "mensaje": "Notificación creada en BD" + (" y push enviado" if notif.enviado_push else " (push desactivado: sin credenciales Firebase)"),
     }
+
+
+# Configuración global de la plataforma (super-admin)
+
+@router.get(
+    "/configuracion",
+    response_model=ConfiguracionResponse,
+    summary="Obtener la configuración global de la plataforma",
+    description=(
+        "Parámetros globales que aplican a TODOS los talleres: porcentaje de "
+        "penalización por incumplir el SLA de llegada y minutos de tolerancia."
+    ),
+)
+def obtener_configuracion(
+    db: Session = Depends(get_db),
+    _admin=Depends(get_current_admin),
+):
+    return get_configuracion(db)
+
+
+@router.patch(
+    "/configuracion",
+    response_model=ConfiguracionResponse,
+    summary="Actualizar la configuración global de la plataforma",
+    description=(
+        "Solo super-admin (rol=4). Actualiza únicamente los campos enviados: "
+        "sla_penalizacion_pct (0-100) y/o sla_tolerancia_min (0-600)."
+    ),
+)
+def actualizar_configuracion(
+    body: ConfiguracionUpdate,
+    db: Session = Depends(get_db),
+    _admin=Depends(get_current_admin),
+):
+    config = get_configuracion(db)
+    for field, value in body.model_dump(exclude_unset=True).items():
+        setattr(config, field, value)
+    db.commit()
+    db.refresh(config)
+    return config

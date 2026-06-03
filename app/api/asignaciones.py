@@ -72,8 +72,10 @@ async def obtener_eta(
     if not asig:
         raise HTTPException(404, "Asignacion no existe")
     incidente = asig.incidente
-    if incidente.id_usuario != current_user.id_usuario:
-        raise HTTPException(403, "No es tu asignacion")
+    es_cliente = current_user.id_usuario == incidente.id_usuario
+    es_tecnico = current_user.id_usuario == asig.id_usuario
+    if not (es_cliente or es_tecnico):
+        raise HTTPException(403, "No autorizado")
 
     ultimo = (
         db.query(UbicacionTecnico)

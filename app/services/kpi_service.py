@@ -37,21 +37,34 @@ def tiempo_promedio_asignacion_min(
     id_tenant: Optional[int] = None,
 ) -> float:
     """
-    Promedio en minutos desde que el cliente crea el incidente
-    hasta que se crea la primera asignacion aceptada.
+    Promedio en minutos desde que el cliente crea el incidente hasta que el
+    taller ACEPTA la asignacion. Se lee la transicion 'aceptada' del historial
+    (no el estado actual), para contar tambien las asignaciones que luego
+    avanzaron a en_camino/llegado/completada; si no, las historicas (ya
+    completadas) no contarian y el promedio daria 0.
     """
     estado_aceptada = db.query(EstadoAsignacion).filter_by(nombre="aceptada").first()
     if not estado_aceptada:
         return 0.0
 
+    sub_acept = (
+        select(
+            HistorialEstadoAsignacion.id_asignacion.label("aid"),
+            func.min(HistorialEstadoAsignacion.created_at).label("ts_aceptada"),
+        )
+        .where(HistorialEstadoAsignacion.id_estado_nuevo == estado_aceptada.id_estado_asignacion)
+        .group_by(HistorialEstadoAsignacion.id_asignacion)
+        .subquery()
+    )
+
     q = (
         select(
-            func.avg(func.extract("epoch", Asignacion.created_at - Incidente.created_at) / 60)
+            func.avg(func.extract("epoch", sub_acept.c.ts_aceptada - Incidente.created_at) / 60)
         )
-        .select_from(Asignacion)
+        .select_from(sub_acept)
+        .join(Asignacion, Asignacion.id_asignacion == sub_acept.c.aid)
         .join(Incidente, Incidente.id_incidente == Asignacion.id_incidente)
-        .where(Asignacion.created_at.between(desde, hasta))
-        .where(Asignacion.id_estado_asignacion == estado_aceptada.id_estado_asignacion)
+        .where(sub_acept.c.ts_aceptada.between(desde, hasta))
     )
     if id_tenant is not None:
         q = q.where(Asignacion.id_tenant == id_tenant)

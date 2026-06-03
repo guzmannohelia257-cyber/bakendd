@@ -142,7 +142,7 @@ def _actualizar_pago_desde_intent(
     if referencia:
         pago.referencia_externa = referencia
     if estado_nombre == "completado":
-        _aplicar_comision(pago)
+        _aplicar_comision(db, pago)
 
 
 @router.post(
@@ -233,6 +233,15 @@ def crear_payment_intent(
             referencia_externa=intent.id,
         )
         db.add(pago)
+
+    # La comision de la plataforma se aplica desde la creacion del pago para que
+    # el monto del taller sea correcto aunque el webhook/confirmacion no llegue
+    # (se vuelve a aplicar, idempotente, al confirmarse el pago). Se protege para
+    # no bloquear la creacion del pago si la configuracion no estuviera disponible.
+    try:
+        _aplicar_comision(db, pago)
+    except Exception:
+        pass
 
     db.commit()
 

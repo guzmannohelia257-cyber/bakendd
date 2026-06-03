@@ -656,15 +656,31 @@ async def aceptar_asignacion(
         
         asignacion.id_usuario = payload.id_usuario
 
-    if payload.eta_minutos is not None:
+    # El ETA NO lo escribe el taller: se CALCULA (distancia taller -> incidente),
+    # el mismo tiempo que se le muestra al cliente al elegir taller. Asi lo que ve
+    # el cliente y la base del SLA quedan coherentes.
+    incidente_eta = db.get(Incidente, asignacion.id_incidente)
+    if (
+        incidente_eta is not None
+        and incidente_eta.latitud is not None and incidente_eta.longitud is not None
+        and current_taller.latitud is not None and current_taller.longitud is not None
+    ):
+        from app.services.tracking_service import VELOCIDAD_DEFAULT_KMH
+        d_km = _haversine_km(
+            current_taller.latitud, current_taller.longitud,
+            incidente_eta.latitud, incidente_eta.longitud,
+        )
+        asignacion.eta_minutos = max(1, int(round((d_km / VELOCIDAD_DEFAULT_KMH) * 60)))
+    elif payload.eta_minutos is not None:
+        # Fallback solo si faltan coordenadas para calcularlo.
         asignacion.eta_minutos = payload.eta_minutos
     if payload.nota:
         asignacion.nota_taller = payload.nota
 
     # A.1: usar trazabilidad para registrar el cambio de estado.
     observacion = f"Aceptada por taller {current_taller.id_taller}"
-    if payload.eta_minutos is not None:
-        observacion += f". ETA: {payload.eta_minutos} min"
+    if asignacion.eta_minutos is not None:
+        observacion += f". ETA: {asignacion.eta_minutos} min"
     if payload.id_usuario is not None:
         observacion += f". Técnico asignado: {payload.id_usuario}"
 
@@ -681,8 +697,8 @@ async def aceptar_asignacion(
             mensaje_cliente = f"Tu solicitud fue aceptada por {current_taller.nombre}."
             if payload.id_usuario is not None:
                 mensaje_cliente += f" Técnico asignado: {tecnico_user.nombre}."
-            if payload.eta_minutos is not None:
-                mensaje_cliente += f" ETA: {payload.eta_minutos} min."
+            if asignacion.eta_minutos is not None:
+                mensaje_cliente += f" ETA: {asignacion.eta_minutos} min."
 
             crear_y_enviar_notificacion(
                 db,

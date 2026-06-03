@@ -666,7 +666,7 @@ def completar_asignacion(
             cliente = db.get(Usuario, incidente.id_usuario) if incidente.id_usuario else None
             if payload.costo_final is not None:
                 mensaje = (
-                    f"Tu servicio fue completado. Nuevo pago: Q {payload.costo_final:.2f}. "
+                    f"Tu servicio fue completado. Nuevo pago: Bs {payload.costo_final:.2f}. "
                     "Revisa y realiza el pago en la app."
                 )
             else:

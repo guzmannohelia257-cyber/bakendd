@@ -117,6 +117,10 @@ def enviar_mensaje_usuario(
     msg = Mensaje(
         id_incidente=id_incidente,
         id_usuario=current_user.id_usuario,
+        # Hereda el tenant del incidente (el del taller asignado). Sin esto el
+        # id_tenant queda NULL y el filtro global de tenant oculta el mensaje al
+        # taller (que consulta con su id_tenant en contexto).
+        id_tenant=incidente.id_tenant,
         contenido=payload.contenido,
     )
     db.add(msg)
@@ -162,6 +166,9 @@ def enviar_mensaje_taller(
     msg = Mensaje(
         id_incidente=id_incidente,
         id_taller=current_taller.id_taller,
+        # Hereda el tenant del incidente para que el filtro global no oculte el
+        # mensaje (al cliente, sin tenant, y al propio taller que filtra por el suyo).
+        id_tenant=incidente.id_tenant,
         contenido=payload.contenido,
     )
     db.add(msg)

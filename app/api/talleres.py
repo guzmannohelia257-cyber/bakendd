@@ -808,7 +808,10 @@ async def aceptar_asignacion(
     if incidente and incidente.id_usuario:
         cliente = db.get(Usuario, incidente.id_usuario)
         if cliente:
-            mensaje_cliente = f"Tu solicitud fue aceptada por {current_taller.nombre}."
+            mensaje_cliente = (
+                f"Tu solicitud #{incidente.id_incidente} fue aceptada por "
+                f"{current_taller.nombre}."
+            )
             if payload.id_usuario is not None:
                 mensaje_cliente += f" Técnico asignado: {tecnico_user.nombre}."
             if asignacion.eta_minutos is not None:

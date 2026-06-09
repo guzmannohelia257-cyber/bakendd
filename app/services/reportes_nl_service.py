@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+import time
 from datetime import datetime, timezone
 
 from google.genai import types
@@ -60,6 +61,34 @@ REGLAS:
 - No incluyas ningun texto fuera del JSON."""
 
 
+def _es_transitorio(e: Exception) -> bool:
+    msg = str(e).lower()
+    return any(
+        s in msg
+        for s in ("503", "unavailable", "overloaded", "resource_exhausted", "429", "high demand")
+    )
+
+
+def _generar_con_reintento(contents, config, intentos: int = 3):
+    """Llama a Gemini reintentando ante errores transitorios (503/overloaded/429)
+    con backoff incremental. Propaga el ultimo error si no logra responder."""
+    ultimo = None
+    for i in range(intentos):
+        try:
+            return _client.models.generate_content(
+                model=settings.GEMINI_MODEL, contents=contents, config=config
+            )
+        except Exception as e:
+            ultimo = e
+            if _es_transitorio(e) and i < intentos - 1:
+                logger.warning("[ReportesNL] Gemini transitorio (intento %d/%d): %s", i + 1, intentos, e)
+                time.sleep(1.5 * (i + 1))
+                continue
+            raise
+    if ultimo:
+        raise ultimo
+
+
 def interpretar(db: Session, texto: str) -> dict:
     if _client is None:
         raise RuntimeError(
@@ -85,17 +114,15 @@ def interpretar(db: Session, texto: str) -> dict:
         f'PETICION DEL ADMINISTRADOR:\n"{texto.strip()}"'
     )
 
+    contents = [types.Content(role="user", parts=[types.Part.from_text(text=user_prompt)])]
+    config = types.GenerateContentConfig(
+        system_instruction=_system_prompt(),
+        response_mime_type="application/json",
+        temperature=0.2,
+        max_output_tokens=1024,
+    )
     try:
-        respuesta = _client.models.generate_content(
-            model=settings.GEMINI_MODEL,
-            contents=[types.Content(role="user", parts=[types.Part.from_text(text=user_prompt)])],
-            config=types.GenerateContentConfig(
-                system_instruction=_system_prompt(),
-                response_mime_type="application/json",
-                temperature=0.2,
-                max_output_tokens=1024,
-            ),
-        )
+        respuesta = _generar_con_reintento(contents, config)
     except Exception as e:
         logger.exception("[ReportesNL] Error llamando a Gemini: %s", e)
         raise RuntimeError(f"Error al interpretar con IA: {e}") from e

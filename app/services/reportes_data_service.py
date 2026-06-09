@@ -12,9 +12,11 @@ incluido el flujo publico con id_tenant NULL), igual que los endpoints de KPIs.
 """
 from __future__ import annotations
 
+import time
 from datetime import datetime, timezone
 from typing import Optional
 
+import httpx
 from sqlalchemy import extract, func
 from sqlalchemy.orm import Session
 
@@ -62,6 +64,55 @@ def _limite(p: ReporteParams, default: int = 10) -> int:
     return p.limite or default
 
 
+# Reverse-geocoding de zonas (lat/lng -> calle/barrio) con Nominatim (OSM).
+# Cache en memoria por celda redondeada; respeta el limite de 1 req/seg de
+# Nominatim. Si falla o no resuelve, cae a las coordenadas como etiqueta.
+_GEOCACHE: dict = {}
+_NOMINATIM_UA = "Yary2-Reportes/1.0 (asistencia vial)"
+_geo_ultimo = [0.0]
+
+
+def _geo_throttle() -> None:
+    ahora = time.monotonic()
+    delta = ahora - _geo_ultimo[0]
+    if delta < 1.1:
+        time.sleep(1.1 - delta)
+    _geo_ultimo[0] = time.monotonic()
+
+
+def _reverse_geocode(lat, lng) -> str:
+    key = (round(float(lat), 4), round(float(lng), 4))
+    if key in _GEOCACHE:
+        return _GEOCACHE[key]
+
+    etiqueta = ""
+    try:
+        _geo_throttle()
+        resp = httpx.get(
+            "https://nominatim.openstreetmap.org/reverse",
+            params={"format": "jsonv2", "lat": lat, "lon": lng, "zoom": 17, "addressdetails": 1},
+            headers={"User-Agent": _NOMINATIM_UA, "Accept": "application/json"},
+            timeout=8,
+        )
+        if resp.status_code == 200:
+            j = resp.json() or {}
+            a = j.get("address") or {}
+            partes = [
+                a.get("road") or a.get("pedestrian") or a.get("neighbourhood"),
+                a.get("suburb") or a.get("city_district") or a.get("city") or a.get("town") or a.get("village"),
+            ]
+            etiqueta = ", ".join([p for p in partes if p])
+            if not etiqueta:
+                etiqueta = ", ".join((j.get("display_name") or "").split(",")[:2]).strip()
+    except Exception:
+        etiqueta = ""
+
+    if not etiqueta:
+        etiqueta = f"{round(float(lat), 5)}, {round(float(lng), 5)}"
+    _GEOCACHE[key] = etiqueta
+    return etiqueta
+
+
 # Reportes basados en kpi_service
 
 def _r_incidentes_por_taller(db, p):
@@ -84,8 +135,11 @@ def _r_incidentes_por_taller(db, p):
 def _r_zonas(db, p):
     desde, hasta = _rango(p)
     rows = kpi_service.zonas_mas_incidentes(db, desde, hasta, p.id_tenant, limite=_limite(p))
-    columnas = ["Latitud", "Longitud", "Total incidentes"]
-    filas = [{"Latitud": r["lat"], "Longitud": r["lng"], "Total incidentes": r["total"]} for r in rows]
+    columnas = ["Zona", "Total incidentes"]
+    filas = [
+        {"Zona": _reverse_geocode(r["lat"], r["lng"]), "Total incidentes": r["total"]}
+        for r in rows
+    ]
     return "Zonas con más incidentes", columnas, filas
 
 

@@ -13,7 +13,7 @@ from app.api import (
     incidencias_router, evidencias_router, tecnicos_router,
     notificaciones_router, mensajes_router, pagos_router,
     admin_router, tenants_router, catalogos_router, cotizaciones_router, asignaciones_router, kpis_router,
-    adendas_router, reportes_router,
+    adendas_router, reportes_router, tracking_publico_router,
 )
 from app.db.session import engine, Base
 # Importar el paquete de modelos registra todas las tablas en Base.metadata
@@ -105,6 +105,7 @@ app.include_router(asignaciones_router)
 app.include_router(kpis_router)
 app.include_router(adendas_router)
 app.include_router(reportes_router)
+app.include_router(tracking_publico_router)
 app.include_router(ws_router)
 
 from app.api.diagnostico import router as diagnostico_router

@@ -81,6 +81,10 @@ class Asignacion(Base):
     compensacion_monto = Column(Numeric(10, 2), nullable=True)
     compensacion_pagada = Column(Boolean, default=False, nullable=False)
 
+    # Token opaco (UUID4) para compartir el seguimiento en vivo con un tercero
+    # mediante un link público. Nullable: solo se genera cuando el taller comparte.
+    share_token = Column(String(64), nullable=True, unique=True, index=True)
+
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 

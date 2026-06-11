@@ -19,12 +19,13 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app.core.security import get_current_taller
+from app.core.security import get_current_taller, get_current_user
 from app.core.tenant_context import current_tenant
 from app.db.session import get_db
-from app.models.incidente import Asignacion
+from app.models.incidente import Asignacion, Incidente
 from app.models.taller import Taller
 from app.models.ubicacion import UbicacionTecnico
+from app.models.usuario import Usuario
 from app.schemas.tracking_publico_schema import (
     ClientePublico,
     CompartirResponse,
@@ -65,6 +66,42 @@ def compartir_asignacion(
         raise HTTPException(404, "Asignacion no existe")
     if asig.id_taller != taller.id_taller:
         raise HTTPException(403, "La asignacion no pertenece a tu taller")
+
+    if not asig.share_token:
+        asig.share_token = uuid.uuid4().hex
+        db.commit()
+        db.refresh(asig)
+
+    return CompartirResponse(token=asig.share_token)
+
+
+@router.post(
+    "/asignaciones/{id_asignacion}/compartir-cliente",
+    response_model=CompartirResponse,
+    summary="El cliente (dueno del incidente) genera/recupera el token del link publico",
+)
+def compartir_asignacion_cliente(
+    id_asignacion: int,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
+):
+    """
+    El cliente comparte el seguimiento en vivo de SU propia emergencia con un
+    tercero. Validamos que la asignacion pertenezca a un incidente del usuario.
+    El cliente no tiene tenant en contexto (current_tenant=None), asi que el
+    filtro global no aplica y puede leer su asignacion sin importar el tenant.
+    """
+    asig = (
+        db.query(Asignacion)
+        .filter(Asignacion.id_asignacion == id_asignacion)
+        .first()
+    )
+    if not asig:
+        raise HTTPException(404, "Asignacion no existe")
+
+    incidente = db.get(Incidente, asig.id_incidente)
+    if not incidente or incidente.id_usuario != current_user.id_usuario:
+        raise HTTPException(403, "Esta asignacion no te pertenece")
 
     if not asig.share_token:
         asig.share_token = uuid.uuid4().hex
